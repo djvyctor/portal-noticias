@@ -1,4 +1,7 @@
 @import './base.css';
+@taiwind base;
+@tailwind components;
+@tailwind utilities;
 
 #app {
   max-width: 1280px;
