@@ -63,4 +63,10 @@ class NewsPolicy
     {
         return false;
     }
+
+    public function approve(User $user, News $news)
+    {
+        // só o admin edita
+        return $user->isAdmin() || $user->isEditor();
+    }
 }

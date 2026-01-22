@@ -104,4 +104,34 @@ class NewsController extends Controller
         $news = \App\Models\News::paginate(10);
         return response()->json($news);
     }
+
+    public function approve($id)
+    {
+        $news = \App\Models\News::findOrFail($id);
+
+        $this->authorize('approve', $news);
+
+        $news->status = 'approved';
+        $news->save();
+
+        return response()->json(['message' => 'Notícia aprovada com sucesso', 'news' => $news]);
+    }
+
+    public function feature($id)
+    {
+        $news = \App\Models\News::findOrFail($id);
+
+        $this->authorize('approve', $news); // usa a nossa política de aprovação cavalo
+
+        $news->is_featured = true;
+        $news->save();
+
+        return response()->json(['message' => 'Notícia destacada com sucesso', 'news' => $news]);
+    }
+
+    public function publicIndex()
+    {
+        $news = \App\Models\News::where('status', 'approved')->paginate(10);
+        return response()->json($news);
+    }
 }

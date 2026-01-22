@@ -12,6 +12,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'me']);
     Route::apiResource('/user/news', NewsController::class); // Cria automaticamente as rotas para index, show, store, update, destroy
+    Route::patch('/news/{id}/approve', [\App\Http\Controllers\NewsController::class, 'approve']);
+    Route::patch('/news/{id}/feature', [\App\Http\Controllers\NewsController::class, 'feature']);
 });
 
 Route::get('/news', [NewsController::class, 'listAll']);
+Route::get('/news/public', [\App\Http\Controllers\NewsController::class, 'publicIndex']);
