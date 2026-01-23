@@ -28,7 +28,8 @@ class AuthController extends Controller
 
         return response()->json([
             'user' => $user,
-            'access_token' => $token,
+            'token' => $token,
+            'access_token' => $token, // mantive para compatibilidade com o frontend
             'token_type' => 'Bearer',
         ], 201);
     }
@@ -52,7 +53,8 @@ class AuthController extends Controller
 
         return response()->json([
             'user' => $user,
-            'access_token' => $token,
+            'token' => $token,
+            'access_token' => $token, // mantive para compatibilidade com o frontend
             'token_type' => 'Bearer',
         ]);
     }

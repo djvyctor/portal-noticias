@@ -8,7 +8,7 @@ use App\Models\News;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
-// Importar o Trait de Autorização
+
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class NewsController extends Controller
@@ -111,7 +111,8 @@ class NewsController extends Controller
 
         $this->authorize('approve', $news);
 
-        $news->status = 'approved';
+        $news->status = 'published';
+        $news->published_at = now();
         $news->save();
 
         return response()->json(['message' => 'Notícia aprovada com sucesso', 'news' => $news]);
@@ -131,7 +132,65 @@ class NewsController extends Controller
 
     public function publicIndex()
     {
-        $news = \App\Models\News::where('status', 'approved')->paginate(10);
+        $news = News::where('status', 'published')
+            ->with(['user:id,name', 'category:id,name,slug'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+
+        return response()->json($news);
+    }
+
+    public function showBySlug($slug)
+    {
+        $news = News::where('slug', $slug)
+            ->where('status', 'published')
+            ->with(['user', 'category'])
+            ->firstOrFail();
+
+        return response()->json($news);
+    }
+
+    public function getByCategory($categorySlug)
+    {
+        $category = \App\Models\Category::where('slug', $categorySlug)->firstOrFail();
+        $news = News::where('category_id', $category->id)
+            ->where('status', 'published')
+            ->with(['user', 'category'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+
+        return response()->json($news);
+    }
+
+    public function search(Request $request)
+    {
+        $request->validate([
+            'q' => 'required|string|min:2|max:255',
+        ]);
+
+        $query = $request->input('q');
+
+        $news = News::where('status', 'published')
+            ->where(function($q) use ($query) {
+                $q->where('title', 'like', "%{$query}%")
+                    ->orWhere('content', 'like', "%{$query}%");
+            })
+            ->with(['user', 'category'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+
+        return response()->json($news);
+    }
+
+    public function featured()
+    {
+        $news = News::where('status', 'published')
+            ->where('is_featured', true)
+            ->with(['user:id,name', 'category:id,name,slug'])
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get();
+
         return response()->json($news);
     }
 }

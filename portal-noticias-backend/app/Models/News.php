@@ -14,11 +14,13 @@ class News extends Model
         'status',
         'is_featured',
         'user_id',
-        'category_id'
+        'category_id',
+        'published_at',
     ];
 
     protected $casts = [
         'is_featured' => 'boolean',
+        'published_at' => 'datetime',
     ];
 
     public function user()
