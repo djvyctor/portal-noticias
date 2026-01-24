@@ -26,14 +26,14 @@
         </div>
 
         <nav class="hidden md:flex space-x-8">
-          <a 
-            v-for="topic in topics" 
-            :key="topic"
-            href="#"
+          <router-link 
+            v-for="category in categories" 
+            :key="category.id"
+            :to="`/categoria/${category.slug}`"
             class="text-gray-600 hover:text-yellow-600 font-bold text-sm uppercase tracking-wide transition-colors duration-200 border-b-2 border-transparent hover:border-yellow-400 py-1"
           >
-            {{ topic }}
-          </a>
+            {{ category.name }}
+          </router-link>
         </nav>
 
         <div class="flex items-center gap-4">
@@ -41,14 +41,17 @@
             <svg class="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
-            <input 
-              type="text" 
-              placeholder="Buscar..." 
-              class="bg-transparent border-none focus:ring-0 text-sm ml-2 w-32 text-gray-700 placeholder-gray-400"
-            />
+            <form @submit.prevent="handleSearch" class="flex items-center">
+              <input 
+                v-model="searchQuery"
+                type="text" 
+                placeholder="Buscar..." 
+                class="bg-transparent border-none focus:ring-0 text-sm ml-2 w-32 text-gray-700 placeholder-gray-400"
+              />
+            </form>
           </div>
 
-          <button class="lg:hidden text-gray-500 hover:text-black">
+          <button @click="handleMobileSearch" class="lg:hidden text-gray-500 hover:text-black">
             <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
@@ -56,7 +59,20 @@
 
           <div class="h-6 w-px bg-gray-300 mx-1 hidden sm:block"></div>
 
+          <!-- Se estiver logado, mostra perfil; se não, mostra botão de login -->
+          <div v-if="isLoggedIn" class="flex items-center gap-3">
+            <router-link
+              to="/painel"
+              class="flex items-center gap-2 text-sm font-bold text-gray-700 hover:text-yellow-600 transition-colors"
+            >
+              <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              <span class="hidden sm:inline">{{ user?.name || 'Painel' }}</span>
+            </router-link>
+          </div>
           <button
+            v-else
             class="flex items-center gap-2 text-sm font-bold text-gray-700 hover:text-yellow-600 transition-colors"
             @click="goToLogin"
           >
@@ -71,35 +87,70 @@
 
     <div v-show="isMobileMenuOpen" class="md:hidden border-t border-gray-100 bg-gray-50">
       <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-        <a
-          v-for="topic in topics"
-          :key="topic"
-          href="#"
+        <router-link
+          v-for="category in categories"
+          :key="category.id"
+          :to="`/categoria/${category.slug}`"
           class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-black hover:bg-yellow-100 transition"
         >
-          {{ topic }}
-        </a>
+          {{ category.name }}
+        </router-link>
       </div>
     </div>
   </header>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import api from '../services/api'
 
 const router = useRouter()
 const isMobileMenuOpen = ref(false)
+const categories = ref([])
+const user = ref(null)
+const searchQuery = ref('')
 
-const topics = ref([
-  "Política",
-  "Economia",
-  "Esportes",
-  "Tecnologia",
-  "Mundo"
-])
+const isLoggedIn = computed(() => {
+  const token = localStorage.getItem('token')
+  return !!token
+})
+
+const loadCategories = async () => {
+  try {
+    const response = await api.get('/api/categories')
+    categories.value = response.data || []
+  } catch (error) {
+    console.error('Erro ao carregar categorias:', error)
+  }
+}
+
+const loadUser = () => {
+  const storedUser = localStorage.getItem('user')
+  if (storedUser) {
+    user.value = JSON.parse(storedUser)
+  }
+}
+
+const handleSearch = () => {
+  if (searchQuery.value.trim().length >= 2) {
+    router.push(`/busca?q=${encodeURIComponent(searchQuery.value.trim())}`)
+  }
+}
+
+const handleMobileSearch = () => {
+  const query = prompt('Digite sua busca:')
+  if (query && query.trim().length >= 2) {
+    router.push(`/busca?q=${encodeURIComponent(query.trim())}`)
+  }
+}
 
 const goToLogin = () => {
   router.push("/login")
 }
+
+onMounted(() => {
+  loadCategories()
+  loadUser()
+})
 </script>

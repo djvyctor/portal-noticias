@@ -23,9 +23,17 @@ class CategorySeeder extends Seeder
                 'name' => 'Política',
                 'slug' => Str::slug('Política'),
             ],
-                        [
+            [
                 'name' => 'Tecnologia',
                 'slug' => Str::slug('Tecnologia'),
+            ],
+            [
+                'name' => 'Economia',
+                'slug' => Str::slug('Economia'),
+            ],
+            [
+                'name' => 'Mundo',
+                'slug' => Str::slug('Mundo'),
             ],
         ]);
     }

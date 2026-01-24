@@ -33,6 +33,7 @@ class NewsStoreRequest extends FormRequest
             'content'     => 'required|string',
             'image'       => 'nullable|file|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'category_id' => 'required|exists:categories,id',
+            'status'      => 'nullable|in:draft,published',
             'slug'        => 'required|string|unique:news,slug',
         ];
     }

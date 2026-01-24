@@ -17,11 +17,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/news/{id}/feature', [\App\Http\Controllers\NewsController::class, 'feature']);
 });
 
-Route::get('/news', [NewsController::class, 'listAll']);
+Route::get('/news/all', [NewsController::class, 'listAll']);
 Route::get('/news/public', [\App\Http\Controllers\NewsController::class, 'publicIndex']);
-Route::get('/news/{slug}', [NewsController::class, 'showBySlug']);
+Route::get('/news/featured', [NewsController::class, 'featured']); // IMPORTANTE: Antes de /news/{slug}
 Route::get('/news/category/{categorySlug}', [NewsController::class, 'getByCategory']);
 Route::get('/news/search', [NewsController::class, 'search']);
+Route::get('/news/{slug}', [NewsController::class, 'showBySlug']); // Deve vir DEPOIS das rotas específicas
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/categories/{slug}', [CategoryController::class, 'show']);
-Route::get('/news/featured', [NewsController::class, 'featured']);

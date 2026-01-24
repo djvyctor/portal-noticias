@@ -36,7 +36,15 @@ class NewsController extends Controller
         
         $imagePath = null;
         if ($request->hasFile('image')) {
-            $imagePath = Storage::put('images', $request->file('image'));
+            $imagePath = $request->file('image')->store('images', 'public');
+        }
+
+        // Define o status baseado no papel do usuário
+        $status = 'draft'; // Padrão: rascunho/pendente
+        
+        // Se o usuário for Editor ou Admin E enviou status 'published', pode publicar direto
+        if ((Auth::user()->isEditor() || Auth::user()->isAdmin()) && isset($entry['status']) && $entry['status'] === 'published') {
+            $status = 'published';
         }
 
         $news = Auth::user()->news()->create([
@@ -45,8 +53,14 @@ class NewsController extends Controller
             'image_path' => $imagePath,
             'slug' => \Illuminate\Support\Str::slug($entry['title']),
             'category_id' => $entry['category_id'],
-            'status' => 'draft',
+            'status' => $status,
         ]);
+
+        // Se foi publicado direto, define published_at
+        if ($status === 'published') {
+            $news->published_at = now();
+            $news->save();
+        }
 
         return response()->json($news, 201);
     }
@@ -59,9 +73,9 @@ class NewsController extends Controller
 
         if ($request->hasFile('image')) {
             if ($news->image_path) {
-                Storage::delete($news->image_path);
+                Storage::disk('public')->delete($news->image_path);
             }
-            $imagePath = Storage::put('images', $request->file('image'));
+            $imagePath = $request->file('image')->store('images', 'public');
             $news->image_path = $imagePath;
         }
 
@@ -92,7 +106,7 @@ class NewsController extends Controller
         $this->authorize('delete', $news);
 
         if ($news->image_path) {
-             Storage::delete($news->image_path);
+             Storage::disk('public')->delete($news->image_path);
         }
 
         $news->delete();
@@ -101,7 +115,9 @@ class NewsController extends Controller
 
     public function listAll()
     {
-        $news = \App\Models\News::paginate(10);
+        $news = \App\Models\News::with(['user:id,name', 'category:id,name,slug'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
         return response()->json($news);
     }
 
@@ -115,6 +131,10 @@ class NewsController extends Controller
         $news->published_at = now();
         $news->save();
 
+        // Recarrega a notícia com relacionamentos para garantir que está atualizada
+        $news->refresh();
+        $news->load(['user', 'category']);
+
         return response()->json(['message' => 'Notícia aprovada com sucesso', 'news' => $news]);
     }
 
@@ -124,10 +144,19 @@ class NewsController extends Controller
 
         $this->authorize('approve', $news); // usa a nossa política de aprovação cavalo
 
-        $news->is_featured = true;
+        // Toggle: se já está destacada, remove; se não está, destaca
+        $news->is_featured = !$news->is_featured;
         $news->save();
 
-        return response()->json(['message' => 'Notícia destacada com sucesso', 'news' => $news]);
+        // Recarrega a notícia para garantir que está atualizada
+        $news->refresh();
+        $news->load(['user', 'category']);
+
+        $message = $news->is_featured 
+            ? 'Notícia destacada com sucesso' 
+            : 'Destaque removido com sucesso';
+
+        return response()->json(['message' => $message, 'news' => $news]);
     }
 
     public function publicIndex()
@@ -187,10 +216,12 @@ class NewsController extends Controller
         $news = News::where('status', 'published')
             ->where('is_featured', true)
             ->with(['user:id,name', 'category:id,name,slug'])
+            ->orderBy('published_at', 'desc')
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();
 
+        // Retorna array vazio se não houver notícias, mas sempre retorna JSON válido
         return response()->json($news);
     }
 }

@@ -177,15 +177,14 @@ const handleLogin = async () => {
   error.value = null
 
   try {
-    const response = await api.post("api/login", form)
+    const response = await api.post("/api/login", form)
     
-    // Armazena o token
+    // Armazena o token e dados do usuário
     localStorage.setItem("token", response.data.token)
+    localStorage.setItem("user", JSON.stringify(response.data.user))
     
-    // Dica de Ouro: Com Pinia, você faria: 
-    // await authStore.login(form)
-    
-    router.push("/")
+    // Redireciona para o painel de redação
+    router.push("/painel")
   } catch (err) {
     console.error(err)
     if (err.response?.status === 401) {
