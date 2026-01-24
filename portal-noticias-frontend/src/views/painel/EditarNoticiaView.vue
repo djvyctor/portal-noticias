@@ -19,6 +19,16 @@
       <p class="text-gray-500">Carregando...</p>
     </div>
 
+    <div v-else-if="error" class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+        <p class="font-bold">Erro ao carregar notícia</p>
+        <p v-html="error"></p>
+        <router-link to="/painel/noticias" class="text-blue-600 hover:text-blue-800 underline mt-2 block">
+          Voltar para Minhas Notícias
+        </router-link>
+      </div>
+    </div>
+
     <div v-else-if="news" class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <form @submit.prevent="handleSubmit" class="space-y-6">
         <div class="bg-white rounded-lg shadow p-6">
@@ -92,7 +102,7 @@
           ></textarea>
         </div>
 
-        <div class="bg-white rounded-lg shadow p-6">
+        <div v-if="canManageFeature" class="bg-white rounded-lg shadow p-6">
           <label for="status" class="block text-sm font-medium text-gray-700 mb-2">
             Status
           </label>
@@ -101,9 +111,32 @@
             v-model="form.status"
             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-yellow-500 focus:border-yellow-500"
           >
-            <option value="draft">Rascunho</option>
+            <option value="pending">Pendente</option>
             <option value="published">Publicada</option>
+            <option value="rejected">Rejeitada</option>
           </select>
+        </div>
+
+        <div v-else-if="news.status === 'rejected'" class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+          <p class="text-sm text-amber-800">
+            <strong>Esta notícia foi rejeitada.</strong> Ao salvar, ela será reenviada para aprovação (status Pendente). Você não altera o status.
+          </p>
+        </div>
+
+        <div v-if="canManageFeature" class="bg-white rounded-lg shadow p-6">
+          <label class="flex items-center gap-3 cursor-pointer">
+            <input
+              v-model="form.is_featured"
+              type="checkbox"
+              class="rounded border-gray-300 text-yellow-600 focus:ring-yellow-500"
+            />
+            <span class="text-sm font-medium text-gray-700">
+              Destacar no carrossel da home
+            </span>
+          </label>
+          <p class="text-xs text-gray-500 mt-2">
+            Notícias destacadas aparecem no carrossel da página inicial (máximo 5). Apenas Editor e Admin podem alterar.
+          </p>
         </div>
 
         <div v-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4">
@@ -123,7 +156,7 @@
             :disabled="saving"
             class="flex-1 px-6 py-3 bg-yellow-600 text-white rounded-lg font-semibold hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {{ saving ? 'Salvando...' : 'Salvar Alterações' }}
+            {{ saving ? 'Salvando...' : (news.status === 'rejected' && !canManageFeature ? 'Reenviar para aprovação' : 'Salvar Alterações') }}
           </button>
         </div>
       </form>
@@ -132,9 +165,9 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import api from '../../services/api'
+import api from '@/services/api'
 
 const route = useRoute()
 const router = useRouter()
@@ -145,29 +178,41 @@ const saving = ref(false)
 const error = ref(null)
 const imagePreview = ref(null)
 const imageFile = ref(null)
+const currentUser = ref(null)
+
+const canManageFeature = computed(() => {
+  const r = currentUser.value?.role
+  return r === 'editor' || r === 'admin'
+})
 
 const form = reactive({
   title: '',
   content: '',
   category_id: '',
-  status: 'draft'
+  status: 'pending',
+  is_featured: false
 })
 
 const loadNews = async () => {
+  loading.value = true
+  error.value = null
   try {
-    const response = await api.get(`/api/user/news/${route.params.id}`)
-    news.value = response.data
-    
-    form.title = news.value.title
-    form.content = news.value.content
-    form.category_id = news.value.category_id
-    form.status = news.value.status
+    const response = await api.get(`/user/news/${route.params.id}`)
+    const res = response.data
+    news.value = res.data ?? res
+    if (!news.value) throw new Error('Notícia não encontrada')
+
+    form.title = news.value.title || ''
+    form.content = news.value.content || ''
+    form.category_id = news.value.category_id || ''
+    form.status = news.value.status || 'pending'
+    form.is_featured = !!news.value.is_featured
+    if (news.value.image_path) {
+      imagePreview.value = `http://portal-noticias-backend.test/storage/${news.value.image_path}`
+    }
   } catch (err) {
     console.error('Erro ao carregar notícia:', err)
-    error.value = 'Erro ao carregar notícia'
-    setTimeout(() => {
-      router.push('/painel/noticias')
-    }, 2000)
+    error.value = err.response?.data?.message || err.message || 'Erro ao carregar notícia. Verifique se você tem permissão.'
   } finally {
     loading.value = false
   }
@@ -175,10 +220,10 @@ const loadNews = async () => {
 
 const loadCategories = async () => {
   try {
-    const response = await api.get('/api/categories')
+    const response = await api.get('/categories')
     categories.value = response.data || []
   } catch (err) {
-    console.error('Erro ao carregar categorias:', err)
+    categories.value = []
   }
 }
 
@@ -208,14 +253,17 @@ const handleSubmit = async () => {
     formData.append('title', form.title)
     formData.append('content', form.content)
     formData.append('category_id', form.category_id)
-    formData.append('status', form.status)
     formData.append('_method', 'PUT')
-    
+    if (canManageFeature.value) {
+      formData.append('status', form.status)
+      formData.append('is_featured', form.is_featured ? '1' : '0')
+    }
+
     if (imageFile.value) {
       formData.append('image', imageFile.value)
     }
 
-    await api.post(`/api/user/news/${route.params.id}`, formData, {
+    await api.post(`/user/news/${route.params.id}`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
@@ -223,7 +271,6 @@ const handleSubmit = async () => {
 
     router.push('/painel/noticias')
   } catch (err) {
-    console.error('Erro ao atualizar notícia:', err)
     error.value = err.response?.data?.message || 'Erro ao atualizar notícia'
   } finally {
     saving.value = false
@@ -231,6 +278,8 @@ const handleSubmit = async () => {
 }
 
 onMounted(() => {
+  const u = localStorage.getItem('user')
+  if (u) currentUser.value = JSON.parse(u)
   loadNews()
   loadCategories()
 })

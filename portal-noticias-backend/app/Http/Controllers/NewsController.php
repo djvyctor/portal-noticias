@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\NewsStoreRequest;
 use App\Http\Requests\NewsUpdateRequest;
+use App\Http\Resources\NewsResource;
 use App\Models\News;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
@@ -13,21 +14,19 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class NewsController extends Controller
 {
-    // Usar o Trait dentro da classe
     use AuthorizesRequests;
 
     public function index()
     {
-        // Paginação adicionada
-        $news = Auth::user()->news()->paginate(10);
-        return response()->json($news);
+        $news = Auth::user()->news()->with(['category'])->paginate(10);
+        return NewsResource::collection($news);
     }
 
     public function show(News $news)
     {
         $this->authorize('view', $news);
-        
-        return response()->json($news);
+        $news->load(['user', 'category']);
+        return new NewsResource($news);
     }
 
     public function store(NewsStoreRequest $request)
@@ -39,13 +38,11 @@ class NewsController extends Controller
             $imagePath = $request->file('image')->store('images', 'public');
         }
 
-        // Define o status baseado no papel do usuário
-        $status = 'draft'; // Padrão: rascunho/pendente
-        
-        // Se o usuário for Editor ou Admin E enviou status 'published', pode publicar direto
+        $status = 'pending';
         if ((Auth::user()->isEditor() || Auth::user()->isAdmin()) && isset($entry['status']) && $entry['status'] === 'published') {
             $status = 'published';
         }
+        $authorName = ucwords(strtolower(trim(Auth::user()->name)));
 
         $news = Auth::user()->news()->create([
             'title' => $entry['title'],
@@ -54,15 +51,15 @@ class NewsController extends Controller
             'slug' => \Illuminate\Support\Str::slug($entry['title']),
             'category_id' => $entry['category_id'],
             'status' => $status,
+            'author_name' => $authorName,
         ]);
 
-        // Se foi publicado direto, define published_at
         if ($status === 'published') {
             $news->published_at = now();
             $news->save();
         }
 
-        return response()->json($news, 201);
+        return (new NewsResource($news))->response()->setStatusCode(201);
     }
 
     public function update(NewsUpdateRequest $request, News $news)
@@ -94,11 +91,22 @@ class NewsController extends Controller
             if (isset($entry['status'])) {
                 $news->status = $entry['status'];
             }
+            if (array_key_exists('is_featured', $entry)) {
+                $news->is_featured = (bool) $entry['is_featured'];
+            }
+        } else {
+            if ($news->status === 'rejected') {
+                $news->status = 'pending';
+                $news->rejection_reason = null;
+            }
         }
 
         $news->save();
 
-        return response()->json($news);
+        return response()->json([
+            'message' => 'Notícia atualizada com sucesso',
+            'success' => true
+        ]);
     }
 
     public function destroy(News $news)
@@ -118,7 +126,7 @@ class NewsController extends Controller
         $news = \App\Models\News::with(['user:id,name', 'category:id,name,slug'])
             ->orderBy('created_at', 'desc')
             ->paginate(10);
-        return response()->json($news);
+        return NewsResource::collection($news);
     }
 
     public function approve($id)
@@ -131,32 +139,29 @@ class NewsController extends Controller
         $news->published_at = now();
         $news->save();
 
-        // Recarrega a notícia com relacionamentos para garantir que está atualizada
-        $news->refresh();
-        $news->load(['user', 'category']);
-
-        return response()->json(['message' => 'Notícia aprovada com sucesso', 'news' => $news]);
+        return response()->json([
+            'message' => 'Notícia aprovada com sucesso',
+            'success' => true
+        ]);
     }
 
     public function feature($id)
     {
         $news = \App\Models\News::findOrFail($id);
 
-        $this->authorize('approve', $news); // usa a nossa política de aprovação cavalo
-
-        // Toggle: se já está destacada, remove; se não está, destaca
+        $this->authorize('approve', $news);
         $news->is_featured = !$news->is_featured;
         $news->save();
-
-        // Recarrega a notícia para garantir que está atualizada
-        $news->refresh();
-        $news->load(['user', 'category']);
 
         $message = $news->is_featured 
             ? 'Notícia destacada com sucesso' 
             : 'Destaque removido com sucesso';
 
-        return response()->json(['message' => $message, 'news' => $news]);
+        return response()->json([
+            'message' => $message,
+            'success' => true,
+            'is_featured' => $news->is_featured
+        ]);
     }
 
     public function publicIndex()
@@ -166,7 +171,7 @@ class NewsController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
-        return response()->json($news);
+        return NewsResource::collection($news);
     }
 
     public function showBySlug($slug)
@@ -176,7 +181,7 @@ class NewsController extends Controller
             ->with(['user', 'category'])
             ->firstOrFail();
 
-        return response()->json($news);
+        return new NewsResource($news);
     }
 
     public function getByCategory($categorySlug)
@@ -188,7 +193,7 @@ class NewsController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
-        return response()->json($news);
+        return NewsResource::collection($news);
     }
 
     public function search(Request $request)
@@ -208,7 +213,80 @@ class NewsController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
-        return response()->json($news);
+        return NewsResource::collection($news);
+    }
+
+    public function reject($id)
+    {
+        $news = \App\Models\News::findOrFail($id);
+
+        $this->authorize('reject', $news);
+        $news->status = 'rejected';
+        $news->rejection_reason = request('rejection_reason') ?? 'Não informado';
+        $news->save();
+
+        return response()->json([
+            'message' => 'Notícia rejeitada com sucesso',
+            'success' => true
+        ]);
+    }
+
+    public function pending(Request $request)
+    {
+        if (!Auth::user()->isAdmin() && !Auth::user()->isEditor()) {
+            return response()->json(['message' => 'Não autorizado.'], 403);
+        }
+
+        $perPage = (int) ($request->input('per_page') ?: 15);
+        $perPage = $perPage >= 1 && $perPage <= 50 ? $perPage : 15;
+
+        $news = \App\Models\News::where('status', 'pending')
+            ->with(['user:id,name,email', 'category:id,name,slug'])
+            ->orderBy('created_at', 'asc')
+            ->paginate($perPage);
+
+        return NewsResource::collection($news);
+    }
+
+    public function rejected($userId = null)
+    {
+        if (!$userId) {
+            $userId = Auth::user()->id;
+        }
+        if (Auth::user()->id != $userId && !Auth::user()->isAdmin() && !Auth::user()->isEditor()) {
+            return response()->json(['message' => 'Não autorizado.'], 403);
+        }
+
+        $news = \App\Models\News::where('status', 'rejected')
+            ->where('user_id', $userId)
+            ->with(['category:id,name,slug', 'user:id,name'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
+
+        return NewsResource::collection($news);
+    }
+
+    public function carousel()
+    {
+        $news = News::where('status', 'published')
+            ->where('is_featured', true)
+            ->with(['user:id,name', 'category:id,name,slug'])
+            ->orderBy('published_at', 'desc')
+            ->limit(5)
+            ->get();
+
+        return NewsResource::collection($news);
+    }
+
+    public function dailyNews()
+    {
+        $news = News::where('status', 'published')
+            ->where('is_featured', false)
+            ->with(['user:id,name', 'category:id,name,slug'])
+            ->orderBy('published_at', 'desc')
+            ->paginate(15);
+
+        return NewsResource::collection($news);
     }
 
     public function featured()
@@ -217,11 +295,8 @@ class NewsController extends Controller
             ->where('is_featured', true)
             ->with(['user:id,name', 'category:id,name,slug'])
             ->orderBy('published_at', 'desc')
-            ->orderBy('created_at', 'desc')
-            ->limit(5)
-            ->get();
+            ->paginate(10);
 
-        // Retorna array vazio se não houver notícias, mas sempre retorna JSON válido
-        return response()->json($news);
+        return NewsResource::collection($news);
     }
 }

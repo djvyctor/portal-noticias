@@ -136,15 +136,15 @@ const form = reactive({
   title: '',
   content: '',
   category_id: '',
-  status: 'draft' // Sempre cria como rascunho/pendente
+  status: 'pending' // Sempre cria como pendente de aprovação
 })
 
 const loadCategories = async () => {
   try {
-    const response = await api.get('/api/categories')
+    const response = await api.get('/categories')
     categories.value = response.data || []
   } catch (err) {
-    console.error('Erro ao carregar categorias:', err)
+    categories.value = []
   }
 }
 
@@ -173,15 +173,15 @@ const handleSubmit = async () => {
   if (user.role === 'editor' || user.role === 'admin') {
     form.status = 'published'
   } else {
-    // Jornalista cria como draft (pendente de aprovação)
-    form.status = 'draft'
+    // Jornalista cria como pending (aguardando aprovação)
+    form.status = 'pending'
   }
   
   await saveNews()
 }
 
 const saveDraft = async () => {
-  form.status = 'draft'
+  form.status = 'pending'
   await saveNews()
 }
 
@@ -200,7 +200,7 @@ const saveNews = async () => {
       formData.append('image', imageFile.value)
     }
 
-    await api.post('/api/user/news', formData, {
+    await api.post('/user/news', formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
@@ -208,7 +208,6 @@ const saveNews = async () => {
 
     router.push('/painel/noticias')
   } catch (err) {
-    console.error('Erro ao salvar notícia:', err)
     error.value = err.response?.data?.message || 'Erro ao salvar notícia'
   } finally {
     saving.value = false

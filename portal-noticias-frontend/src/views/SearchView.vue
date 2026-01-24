@@ -78,10 +78,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import Header from '../components/Header.vue'
-import api from '../services/api'
+import Header from '@/components/Header.vue'
+import { newsAPI } from '@/services/api'
 
 const route = useRoute()
 const router = useRouter()
@@ -91,20 +91,21 @@ const searchQuery = ref('')
 
 const fetchSearchResults = async () => {
   const query = route.query.q
-  if (!query || query.length < 2) {
+  if (!query || String(query).trim().length < 2) {
     searchQuery.value = ''
     newsList.value = []
     return
   }
 
   loading.value = true
-  searchQuery.value = query
-  
+  searchQuery.value = String(query).trim()
+
   try {
-    const response = await api.get(`/api/news/search?q=${encodeURIComponent(query)}`)
-    newsList.value = response.data.data || response.data || []
-  } catch (error) {
-    console.error('Erro ao buscar notícias:', error)
+    const response = await newsAPI.search(searchQuery.value)
+    const res = response.data
+    newsList.value = res.data ?? res ?? []
+  } catch (err) {
+    console.error('Erro na busca:', err)
     newsList.value = []
   } finally {
     loading.value = false
@@ -140,4 +141,11 @@ const getExcerpt = (content, maxLength = 150) => {
 onMounted(() => {
   fetchSearchResults()
 })
+
+watch(
+  () => route.query.q,
+  () => {
+    fetchSearchResults()
+  }
+)
 </script>

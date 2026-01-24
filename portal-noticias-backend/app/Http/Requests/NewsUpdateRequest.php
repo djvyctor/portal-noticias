@@ -28,7 +28,8 @@ class NewsUpdateRequest extends FormRequest
             'content' => 'string',
             'image' => 'file|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'category_id' => 'exists:categories,id',
-            'status' => 'in:draft,published,archived',
+            'status' => 'in:pending,published,rejected',
+            'is_featured' => 'boolean',
         ];
     }
 }

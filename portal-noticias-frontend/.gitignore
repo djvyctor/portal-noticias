@@ -1,5 +1,9 @@
-# Logs
-logs
+node_modules
+dist
+dist-ssr
+coverage
+*.local
+
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -7,39 +11,25 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-.DS_Store
-dist
-dist-ssr
-coverage
-*.local
-
-# Variáveis de ambiente
 .env
 .env.local
 .env.production
 .env.*.local
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
+.DS_Store
+Thumbs.db
+*.tsbuildinfo
+.eslintcache
+
 .idea
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+.vscode/*
+!.vscode/extensions.json
 
-*.tsbuildinfo
-
-.eslintcache
-
-# Cypress
 /cypress/videos/
 /cypress/screenshots/
-
-# Vitest
 __screenshots__/
-
-# OS
-Thumbs.db

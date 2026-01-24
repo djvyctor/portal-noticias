@@ -143,10 +143,10 @@ const filteredNews = computed(() => {
 const loadNews = async () => {
   loading.value = true
   try {
-    const response = await api.get('/api/user/news')
+    const response = await api.get('/user/news')
     allNews.value = response.data.data || response.data || []
   } catch (error) {
-    console.error('Erro ao carregar notícias:', error)
+    allNews.value = []
   } finally {
     loading.value = false
   }
@@ -160,11 +160,13 @@ const deleteNews = async (id) => {
   if (!confirm('Tem certeza que deseja excluir esta notícia?')) return
   
   try {
-    await api.delete(`/api/user/news/${id}`)
-    allNews.value = allNews.value.filter(n => n.id !== id)
+    await api.delete(`/user/news/${id}`)
+    // Recarrega a lista para garantir que está atualizada
+    loadNews()
+    alert('Notícia excluída com sucesso!')
   } catch (error) {
-    console.error('Erro ao excluir notícia:', error)
-    alert('Erro ao excluir notícia')
+    console.error('Erro ao excluir:', error)
+    alert('Erro ao excluir notícia: ' + (error.response?.data?.message || error.message))
   }
 }
 

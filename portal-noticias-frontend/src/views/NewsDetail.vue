@@ -45,18 +45,26 @@
       </h1>
 
       <!-- Meta informações -->
-      <div class="flex flex-wrap items-center gap-4 text-sm text-gray-500 mb-6 pb-6 border-b border-gray-200">
+      <div class="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-6 pb-6 border-b border-gray-200">
         <div class="flex items-center">
-          <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg class="w-5 h-5 mr-2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
           </svg>
-          <span>{{ news.user?.name || 'Autor' }}</span>
+          <span class="font-medium">Por {{ news.author_name || news.user?.name || 'Autor' }}</span>
         </div>
+        <span class="text-gray-300">•</span>
         <div class="flex items-center">
-          <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <svg class="w-5 h-5 mr-2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
           <span>{{ formatDate(news.published_at || news.created_at) }}</span>
+        </div>
+        <span class="text-gray-300">•</span>
+        <div class="flex items-center">
+          <svg class="w-5 h-5 mr-2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>{{ formatTime(news.published_at || news.created_at) }}</span>
         </div>
       </div>
 
@@ -74,14 +82,6 @@
         <div v-html="news.content" class="text-gray-700 leading-relaxed"></div>
       </article>
 
-      <!-- Divider -->
-      <div class="border-t border-gray-200 my-8"></div>
-
-      <!-- Notícias relacionadas (opcional, pode ser implementado depois) -->
-      <div class="mt-8">
-        <h2 class="text-2xl font-bold text-gray-900 mb-4">Notícias Relacionadas</h2>
-        <p class="text-gray-500 text-sm">Em breve...</p>
-      </div>
     </main>
   </div>
 </template>
@@ -104,10 +104,10 @@ const fetchNews = async () => {
   
   try {
     const slug = route.params.slug
-    const response = await api.get(`/api/news/${slug}`)
-    news.value = response.data
+    const response = await api.get(`/news/${slug}`)
+    const res = response.data
+    news.value = res.data ?? res
   } catch (err) {
-    console.error('Erro ao buscar notícia:', err)
     if (err.response?.status === 404) {
       error.value = 'Notícia não encontrada.'
     } else {
@@ -124,7 +124,14 @@ const formatDate = (dateString) => {
   return date.toLocaleDateString('pt-BR', {
     day: '2-digit',
     month: 'long',
-    year: 'numeric',
+    year: 'numeric'
+  })
+}
+
+const formatTime = (dateString) => {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  return date.toLocaleTimeString('pt-BR', {
     hour: '2-digit',
     minute: '2-digit'
   })

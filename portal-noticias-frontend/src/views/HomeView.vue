@@ -1,7 +1,7 @@
 <script setup>
-// Importando as peças do nosso Lego (verifique se os nomes dos arquivos batem com a sua pasta)
 import Header from '../components/Header.vue'
-import Carousel from '../components/Carousel.vue' // Você chamou de Carolseu.vue antes, sugiro renomear para Carousel.vue
+import Carousel from '../components/Carousel.vue'
+import FeaturedNews from '../components/FeaturedNews.vue'
 import NewList from '../components/NewList.vue'
 </script>
 
@@ -11,16 +11,21 @@ import NewList from '../components/NewList.vue'
     <Header />
 
     <main>
+      <!-- Carrossel (máximo 5 notícias destacadas) -->
       <section>
         <Carousel />
       </section>
 
+      <!-- Notícias em Destaque (todas as notícias com destaque) -->
+      <FeaturedNews />
+
+      <!-- Notícias do Dia (notícias normais, sem destaque) -->
       <div class="pt-8 pb-16">
         <NewList />
       </div>
     </main>
 
-    <div class="max-w-7xl mx-auto px-4 text-center">
+    <div class="max-w-7xl mx-auto px-4 text-center py-8">
       <p class="text-sm text-gray-400">© 2026 PN News - Todos os direitos reservados.</p>
     </div>
 

@@ -18,10 +18,11 @@ class NewsPolicy
 
     /**
      * Determine whether the user can view the model.
+     * Autor, Admin e Editor podem ver (Editor precisa ver para editar qualquer notícia).
      */
     public function view(User $user, News $news): bool
     {
-        return $user->id === $news->user_id || $user->isAdmin();
+        return $user->id === $news->user_id || $user->isAdmin() || $user->isEditor();
     }
 
     /**
@@ -66,7 +67,11 @@ class NewsPolicy
 
     public function approve(User $user, News $news)
     {
-        // só o admin edita
+        return $user->isAdmin() || $user->isEditor();
+    }
+
+    public function reject(User $user, News $news)
+    {
         return $user->isAdmin() || $user->isEditor();
     }
 }

@@ -82,7 +82,7 @@ const fetchCategoryNews = async () => {
   loading.value = true
   try {
     const slug = route.params.slug
-    const response = await api.get(`/api/news/category/${slug}`)
+    const response = await api.get(`/news/category/${slug}`)
     newsList.value = response.data.data || response.data || []
     
     if (newsList.value.length > 0) {
@@ -90,7 +90,7 @@ const fetchCategoryNews = async () => {
     } else {
       // Se não houver notícias, buscar categoria pelo slug
       try {
-        const catResponse = await api.get(`/api/categories/${slug}`)
+        const catResponse = await api.get(`/categories/${slug}`)
         category.value = catResponse.data
       } catch (err) {
         console.error('Erro ao buscar categoria:', err)

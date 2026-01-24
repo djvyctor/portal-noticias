@@ -27,8 +27,8 @@
             Todas ({{ allNews.length }})
           </button>
           <button
-            @click="filterStatus = 'draft'"
-            :class="filterStatus === 'draft' ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-700'"
+            @click="filterStatus = 'pending'"
+            :class="filterStatus === 'pending' ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-700'"
             class="px-4 py-2 rounded-lg font-semibold text-sm transition-colors"
           >
             Pendentes ({{ pendingCount }})
@@ -149,18 +149,18 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import api from '../../services/api'
+import api, { newsAPI } from '@/services/api'
 
 const router = useRouter()
 const allNews = ref([])
 const loading = ref(false)
-const filterStatus = ref('draft') // Mostra pendentes por padrão
+const filterStatus = ref('pending')
 const currentUser = ref(null)
 
 const isEditor = computed(() => currentUser.value?.role === 'editor')
 const isAdmin = computed(() => currentUser.value?.role === 'admin')
 
-const pendingCount = computed(() => allNews.value.filter(n => n.status === 'draft').length)
+const pendingCount = computed(() => allNews.value.filter(n => n.status === 'pending').length)
 const publishedCount = computed(() => allNews.value.filter(n => n.status === 'published').length)
 
 const filteredNews = computed(() => {
@@ -178,12 +178,11 @@ const loadCurrentUser = () => {
 const loadAllNews = async () => {
   loading.value = true
   try {
-    const response = await api.get('/api/news/all')
-    // Laravel retorna paginação: { data: [...], current_page, per_page, etc }
-    allNews.value = response.data.data || response.data || []
+    const response = await newsAPI.all()
+    const res = response.data
+    allNews.value = res.data ?? res ?? []
   } catch (error) {
-    console.error('Erro ao carregar notícias:', error)
-    console.error('Resposta completa:', error.response)
+    allNews.value = []
   } finally {
     loading.value = false
   }
@@ -193,16 +192,10 @@ const approveNews = async (id) => {
   if (!confirm('Deseja aprovar e publicar esta notícia?')) return
   
   try {
-    const response = await api.patch(`/api/news/${id}/approve`)
-    console.log('Notícia aprovada:', response.data)
-    
-    // Recarrega a lista
+    await newsAPI.approve(id)
     await loadAllNews()
-    
     alert('Notícia aprovada e publicada com sucesso! Ela já está visível no site público.')
   } catch (error) {
-    console.error('Erro ao aprovar notícia:', error)
-    console.error('Resposta completa:', error.response)
     alert('Erro ao aprovar notícia: ' + (error.response?.data?.message || error.message))
   }
 }
@@ -212,16 +205,10 @@ const toggleFeature = async (id, currentStatus) => {
   if (!confirm(`Deseja ${action} esta notícia?`)) return
   
   try {
-    const response = await api.patch(`/api/news/${id}/feature`)
-    console.log('Destaque alterado:', response.data)
-    
-    // Recarrega a lista
+    await newsAPI.feature(id)
     await loadAllNews()
-    
     alert(`Notícia ${currentStatus ? 'removida dos destaques' : 'destacada no carrossel'} com sucesso!`)
   } catch (error) {
-    console.error('Erro ao destacar notícia:', error)
-    console.error('Resposta completa:', error.response)
     alert('Erro ao destacar notícia: ' + (error.response?.data?.message || error.message))
   }
 }
@@ -232,16 +219,20 @@ const editNews = (id) => {
 
 const getStatusLabel = (status) => {
   const labels = {
-    draft: 'Pendente',
-    published: 'Publicada'
+    pending: 'Pendente',
+    published: 'Publicada',
+    rejected: 'Rejeitada',
+    draft: 'Pendente'
   }
   return labels[status] || status
 }
 
 const getStatusBadgeClass = (status) => {
   const classes = {
-    draft: 'bg-orange-100 text-orange-700',
-    published: 'bg-green-100 text-green-700'
+    pending: 'bg-orange-100 text-orange-700',
+    published: 'bg-green-100 text-green-700',
+    rejected: 'bg-red-100 text-red-700',
+    draft: 'bg-orange-100 text-orange-700'
   }
   return classes[status] || 'bg-gray-100 text-gray-700'
 }

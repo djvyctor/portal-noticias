@@ -8,7 +8,6 @@
       </div>
     </div>
     
-    <!-- Debug: mostra se há notícias destacadas -->
     <div v-else-if="highlights.length === 0" class="w-full h-[500px] bg-gray-100 flex items-center justify-center border-2 border-dashed border-gray-300">
       <div class="text-center max-w-md px-4">
         <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -121,22 +120,14 @@ let timer = null
 const highlights = ref([])
 const loading = ref(true)
 
-// Buscar notícias em destaque da API
 const fetchFeaturedNews = async () => {
   loading.value = true
   try {
-    const response = await api.get('/api/news/featured')
-    highlights.value = response.data || []
-    
-    // Iniciar slideshow apenas se houver notícias
-    if (highlights.value.length > 0) {
-      startSlide()
-    }
-  } catch (error) {
-    console.error('Erro ao buscar notícias em destaque:', error)
-    if (error.response?.status === 404) {
-      console.error('Endpoint /api/news/featured não encontrado. Verifique se a rota está registrada no backend.')
-    }
+    const response = await api.get('/news/carousel')
+    const res = response.data
+    highlights.value = res.data ?? (Array.isArray(res) ? res : [])
+    if (highlights.value.length > 0) startSlide()
+  } catch (err) {
     highlights.value = []
   } finally {
     loading.value = false
@@ -153,10 +144,9 @@ const prev = () => {
   currentIndex.value = (currentIndex.value - 1 + highlights.value.length) % highlights.value.length
 }
 
-// Auto-play opcional (padrão em portais)
 const startSlide = () => {
-  stopSlide() // Limpa timer anterior se existir
-  if (highlights.value.length <= 1) return // Não precisa de slideshow se tiver 1 ou menos itens
+  stopSlide()
+  if (highlights.value.length <= 1) return
   timer = setInterval(next, 5000)
 }
 

@@ -9,12 +9,12 @@
         </div>
         
         <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight">
-          Acesse sua conta
+          Criar Conta de Jornalista
         </h2>
         <p class="mt-2 text-sm text-gray-600">
           Ou 
-          <router-link to="/" class="font-medium text-yellow-600 hover:text-yellow-500 transition-colors">
-            voltar para a página inicial
+          <router-link to="/login" class="font-medium text-yellow-600 hover:text-yellow-500 transition-colors">
+            fazer login
           </router-link>
         </p>
       </div>
@@ -41,9 +41,50 @@
         </div>
       </transition>
 
-      <form class="mt-8 space-y-6" @submit.prevent="handleLogin">
+      <transition
+        enter-active-class="transition duration-300 ease-out"
+        enter-from-class="transform -translate-y-2 opacity-0"
+        enter-to-class="transform translate-y-0 opacity-100"
+        leave-active-class="transition duration-200 ease-in"
+        leave-from-class="opacity-100"
+        leave-to-class="opacity-0"
+      >
+        <div v-if="success" class="rounded-md bg-green-50 p-4 border-l-4 border-green-500">
+          <div class="flex">
+            <div class="flex-shrink-0">
+              <svg class="h-5 w-5 text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+              </svg>
+            </div>
+            <div class="ml-3">
+              <p class="text-sm text-green-700 font-medium">{{ success }}</p>
+            </div>
+          </div>
+        </div>
+      </transition>
+
+      <form class="mt-8 space-y-6" @submit.prevent="handleRegister">
         <div class="space-y-5">
           
+          <div>
+            <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Nome completo</label>
+            <div class="relative rounded-md shadow-sm">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
+              <input
+                id="name"
+                v-model="form.name"
+                type="text"
+                required
+                class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-yellow-400 focus:border-yellow-400 sm:text-sm transition-shadow placeholder-gray-400"
+                placeholder="Seu nome completo"
+              />
+            </div>
+          </div>
+
           <div>
             <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Endereço de e-mail</label>
             <div class="relative rounded-md shadow-sm">
@@ -69,7 +110,7 @@
           </div>
 
           <div>
-            <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Sua senha</label>
+            <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Senha</label>
             <div class="relative rounded-md shadow-sm">
               <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -81,8 +122,9 @@
                 v-model="form.password"
                 :type="showPassword ? 'text' : 'password'"
                 required
+                minlength="8"
                 class="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-yellow-400 focus:border-yellow-400 sm:text-sm transition-shadow placeholder-gray-400"
-                placeholder="••••••••"
+                placeholder="Mínimo 8 caracteres"
               />
               <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
                 <button type="button" @click="showPassword = !showPassword" class="text-gray-400 hover:text-gray-600 focus:outline-none">
@@ -97,20 +139,25 @@
               </div>
             </div>
           </div>
-        </div>
 
-        <div class="flex items-center justify-between">
-          <div class="flex items-center">
-            <input id="remember-me" name="remember-me" type="checkbox" class="h-4 w-4 text-yellow-500 focus:ring-yellow-400 border-gray-300 rounded">
-            <label for="remember-me" class="ml-2 block text-sm text-gray-900">
-              Lembrar-me
-            </label>
-          </div>
-
-          <div class="text-sm">
-            <router-link to="/esqueci-senha" class="font-medium text-gray-600 hover:text-yellow-600">
-              Esqueceu a senha?
-            </router-link>
+          <div>
+            <label for="password_confirmation" class="block text-sm font-medium text-gray-700 mb-1">Confirmar senha</label>
+            <div class="relative rounded-md shadow-sm">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <input
+                id="password_confirmation"
+                v-model="form.password_confirmation"
+                :type="showPassword ? 'text' : 'password'"
+                required
+                minlength="8"
+                class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-yellow-400 focus:border-yellow-400 sm:text-sm transition-shadow placeholder-gray-400"
+                placeholder="Digite a senha novamente"
+              />
+            </div>
           </div>
         </div>
 
@@ -121,15 +168,15 @@
             class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-bold rounded-lg text-black bg-yellow-400 hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-400 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
           >
             <span class="absolute left-0 inset-y-0 flex items-center pl-3">
-              <svg v-if="!loading" class="h-5 w-5 text-yellow-700 group-hover:text-yellow-800" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+              <svg v-if="!loading" class="h-5 w-5 text-yellow-700 group-hover:text-yellow-800" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
               </svg>
               <svg v-else class="animate-spin h-5 w-5 text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
             </span>
-            {{ loading ? 'Entrando...' : 'Entrar' }}
+            {{ loading ? 'Criando conta...' : 'Criar Conta' }}
           </button>
         </div>
       </form>
@@ -141,16 +188,23 @@
           </div>
           <div class="relative flex justify-center text-sm">
             <span class="px-2 bg-white text-gray-500">
-              Não tem uma conta?
+              Já tem uma conta?
             </span>
           </div>
         </div>
 
         <div class="mt-6 text-center">
-          <router-link to="/registro" class="font-medium text-yellow-600 hover:text-yellow-500">
-            É jornalista e ainda não tem conta? Registre-se aqui
+          <router-link to="/login" class="font-medium text-yellow-600 hover:text-yellow-500">
+            Fazer login
           </router-link>
         </div>
+      </div>
+
+      <div class="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+        <p class="text-xs text-blue-800">
+          <strong>Nota:</strong> Ao criar sua conta, você será registrado como <strong>Jornalista</strong>. 
+          Suas notícias precisarão ser aprovadas por um Editor antes de serem publicadas.
+        </p>
       </div>
 
     </div>
@@ -166,12 +220,15 @@ const router = useRouter()
 
 const loading = ref(false)
 const error = ref(null)
+const success = ref(null)
 const showPassword = ref(false)
 const emailError = ref(null)
 
 const form = reactive({
+  name: "",
   email: "",
-  password: ""
+  password: "",
+  password_confirmation: ""
 })
 
 // Função para validar formato de email
@@ -180,9 +237,10 @@ const validateEmail = (email) => {
   return emailRegex.test(email)
 }
 
-const handleLogin = async () => {
+const handleRegister = async () => {
   loading.value = true
   error.value = null
+  success.value = null
   emailError.value = null
 
   // Validação de email
@@ -194,24 +252,54 @@ const handleLogin = async () => {
 
   if (!validateEmail(form.email)) {
     emailError.value = "Por favor, informe um e-mail válido (ex: nome@exemplo.com)"
+    error.value = "Por favor, informe um e-mail válido."
+    loading.value = false
+    return
+  }
+
+  // Validação básica
+  if (form.password !== form.password_confirmation) {
+    error.value = "As senhas não coincidem."
+    loading.value = false
+    return
+  }
+
+  if (form.password.length < 8) {
+    error.value = "A senha deve ter no mínimo 8 caracteres."
     loading.value = false
     return
   }
 
   try {
-    const response = await api.post("/login", form)
+    const response = await api.post("/register", {
+      name: form.name,
+      email: form.email,
+      password: form.password,
+      password_confirmation: form.password_confirmation
+    })
     
     // Armazena o token e dados do usuário
     localStorage.setItem("token", response.data.token)
     localStorage.setItem("user", JSON.stringify(response.data.user))
     
-    // Redireciona para o painel de redação
-    router.push("/painel")
+    success.value = "Conta criada com sucesso! Redirecionando..."
+    
+    // Redireciona para o painel após 1 segundo
+    setTimeout(() => {
+      router.push("/painel")
+    }, 1000)
   } catch (err) {
-    if (err.response?.status === 401) {
-       error.value = "Credenciais incorretas. Verifique seu e-mail e senha."
+    if (err.response?.status === 422) {
+      const errors = err.response.data.errors
+      if (errors.email) {
+        error.value = "Este e-mail já está cadastrado."
+      } else if (errors.password) {
+        error.value = errors.password[0] || "Erro na validação da senha."
+      } else {
+        error.value = "Erro na validação dos dados. Verifique os campos."
+      }
     } else {
-       error.value = err.response?.data?.message || "Ocorreu um erro ao conectar com o servidor."
+      error.value = err.response?.data?.message || "Ocorreu um erro ao criar a conta."
     }
   } finally {
     loading.value = false

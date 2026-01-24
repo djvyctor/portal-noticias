@@ -24,6 +24,12 @@
                 {{ getRoleName(user?.role) }}
               </span>
             </div>
+            <router-link
+              to="/painel/alterar-senha"
+              class="text-sm text-gray-600 hover:text-yellow-600 transition-colors"
+            >
+              Alterar Senha
+            </router-link>
             <button
               @click="handleLogout"
               class="text-sm text-red-600 hover:text-red-700 font-semibold"
@@ -122,6 +128,29 @@
               Minhas Notícias
             </router-link>
 
+            <!-- Notícias Rejeitadas -->
+            <router-link
+              to="/painel/noticias-rejeitadas"
+              class="flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors font-semibold text-gray-700"
+            >
+              <svg class="mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              Notícias Rejeitadas
+            </router-link>
+
+            <!-- Notícias Pendentes (só para Editor/Admin) -->
+            <router-link
+              v-if="user?.role === 'editor' || user?.role === 'admin'"
+              to="/painel/noticias-pendentes"
+              class="flex items-center justify-center px-4 py-3 border border-yellow-300 rounded-lg bg-yellow-50 hover:bg-yellow-100 transition-colors font-semibold text-yellow-800"
+            >
+              <svg class="mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Notícias Pendentes
+            </router-link>
+
             <!-- Moderação (só para Editor/Admin) -->
             <router-link
               v-if="user?.role === 'editor' || user?.role === 'admin'"
@@ -131,20 +160,30 @@
               <svg class="mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              Moderação
+              Todas as Notícias
             </router-link>
 
-            <!-- Ver Site Público (se não for Editor/Admin) -->
+            <!-- Gerenciar Usuários (só para Admin) -->
             <router-link
-              v-else
-              to="/"
+              v-if="user?.role === 'admin'"
+              to="/painel/usuarios"
+              class="flex items-center justify-center px-4 py-3 border border-purple-300 rounded-lg bg-purple-50 hover:bg-purple-100 transition-colors font-semibold text-purple-800"
+            >
+              <svg class="mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+              Gerenciar Usuários
+            </router-link>
+
+            <!-- Alterar Senha -->
+            <router-link
+              to="/painel/alterar-senha"
               class="flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors font-semibold text-gray-700"
             >
               <svg class="mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
-              Ver Site Público
+              Alterar Senha
             </router-link>
           </div>
         </div>
@@ -163,7 +202,7 @@
             </div>
           </div>
           <router-link
-            to="/painel/moderacao"
+            to="/painel/noticias-pendentes"
             class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-semibold text-sm"
           >
             Ir para Moderação →
@@ -243,11 +282,10 @@ const loadingNews = ref(false)
 
 const loadUserData = async () => {
   try {
-    const response = await api.get('/api/user')
+    const response = await api.get('/user')
     user.value = response.data
     localStorage.setItem('user', JSON.stringify(response.data))
   } catch (error) {
-    console.error('Erro ao carregar dados do usuário:', error)
     router.push('/login')
   }
 }
@@ -256,37 +294,36 @@ const pendingCount = ref(0)
 
 const loadStats = async () => {
   try {
-    const response = await api.get('/api/user/news')
+    const response = await api.get('/user/news')
     const news = response.data.data || response.data || []
     
     stats.value.myNews = news.length
     stats.value.published = news.filter(n => n.status === 'published').length
-    stats.value.drafts = news.filter(n => n.status === 'draft').length
+    stats.value.drafts = news.filter(n => n.status === 'pending').length
     
     // Se for Editor ou Admin, carrega notícias pendentes de TODOS
     if (user.value?.role === 'editor' || user.value?.role === 'admin') {
       try {
-        const allNewsResponse = await api.get('/api/news/all')
+        const allNewsResponse = await api.get('/news/all')
         const allNews = allNewsResponse.data.data || allNewsResponse.data || []
-        pendingCount.value = allNews.filter(n => n.status === 'draft').length
+        pendingCount.value = allNews.filter(n => n.status === 'pending').length
       } catch (error) {
-        console.error('Erro ao carregar notícias pendentes:', error)
         pendingCount.value = 0
       }
     }
   } catch (error) {
-    console.error('Erro ao carregar estatísticas:', error)
+    // Erro silencioso - estatísticas não críticas
   }
 }
 
 const loadRecentNews = async () => {
   loadingNews.value = true
   try {
-    const response = await api.get('/api/user/news')
+    const response = await api.get('/user/news')
     const news = response.data.data || response.data || []
     recentNews.value = news.slice(0, 5)
   } catch (error) {
-    console.error('Erro ao carregar notícias recentes:', error)
+    // Erro silencioso
   } finally {
     loadingNews.value = false
   }
@@ -294,9 +331,9 @@ const loadRecentNews = async () => {
 
 const handleLogout = async () => {
   try {
-    await api.post('/api/logout')
+    await api.post('/logout')
   } catch (error) {
-    console.error('Erro ao fazer logout:', error)
+    // Continua mesmo se houver erro no logout
   } finally {
     localStorage.removeItem('token')
     localStorage.removeItem('user')

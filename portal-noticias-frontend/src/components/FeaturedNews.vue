@@ -1,14 +1,13 @@
 <template>
-  <section class="max-w-7xl mx-auto px-4 py-12">
-    
+  <section class="max-w-7xl mx-auto px-4 py-8 bg-white rounded-lg shadow-sm my-8">
     <div class="flex items-center justify-between mb-8 border-b border-gray-200 pb-4">
       <div class="flex items-center">
-        <span class="w-3 h-8 bg-yellow-400 rounded-sm mr-3"></span>
+        <span class="w-3 h-8 bg-red-600 rounded-sm mr-3"></span>
         <h2 class="text-2xl font-bold text-gray-900 tracking-tight">
-          Últimas do Dia
+          Notícias em Destaque
         </h2>
       </div>
-      <router-link to="/noticias" class="text-sm font-semibold text-yellow-600 hover:text-yellow-700 hover:underline flex items-center transition-colors">
+      <router-link to="/destaques" class="text-sm font-semibold text-red-600 hover:text-red-700 hover:underline flex items-center transition-colors">
         Ver todas
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 ml-1">
           <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
@@ -17,23 +16,26 @@
     </div>
 
     <div v-if="loading" class="text-center py-12">
-      <p class="text-gray-500">Carregando notícias...</p>
+      <p class="text-gray-500">Carregando notícias em destaque...</p>
     </div>
 
-    <div v-else-if="newsList.length === 0" class="text-center py-12">
-      <p class="text-gray-500">Nenhuma notícia disponível no momento.</p>
+    <div v-else-if="featuredList.length === 0" class="text-center py-12">
+      <p class="text-gray-500">Nenhuma notícia em destaque no momento.</p>
     </div>
 
-    <div v-else class="grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+    <div v-else class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
       <article
-        v-for="news in newsList"
+        v-for="news in featuredList.slice(0, 6)"
         :key="news.id"
-        class="group cursor-pointer flex flex-col h-full"
+        class="group cursor-pointer flex flex-col h-full bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
         @click="openNews(news.slug || news.id)"
       >
-        <div class="relative w-full overflow-hidden rounded-md bg-gray-100 mb-4 aspect-video">
-          <span class="absolute top-3 left-3 z-10 bg-yellow-400 text-black text-[10px] font-bold px-2 py-1 uppercase tracking-wide rounded-sm shadow-sm">
-            {{ news.category?.name || 'Geral' }}
+        <div class="relative w-full overflow-hidden bg-gray-100 aspect-video">
+          <span class="absolute top-3 left-3 z-10 bg-red-600 text-white text-[10px] font-bold px-2 py-1 uppercase tracking-wide rounded-sm shadow-sm flex items-center">
+            <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+            </svg>
+            Destaque
           </span>
 
           <img
@@ -47,8 +49,14 @@
           </div>
         </div>
 
-        <div class="flex flex-col flex-grow">
-          <h3 class="text-xl font-bold text-gray-900 leading-snug mb-2 group-hover:text-yellow-600 transition-colors">
+        <div class="flex flex-col flex-grow p-4">
+          <div class="mb-2">
+            <span class="inline-block px-2 py-1 text-xs font-semibold text-gray-700 bg-gray-100 rounded">
+              {{ news.category?.name || 'Geral' }}
+            </span>
+          </div>
+          
+          <h3 class="text-lg font-bold text-gray-900 leading-snug mb-2 group-hover:text-red-600 transition-colors line-clamp-2">
             {{ news.title }}
           </h3>
 
@@ -68,7 +76,7 @@
             </div>
           </div>
 
-          <p class="text-gray-600 text-sm leading-relaxed line-clamp-3 mb-4 flex-grow">
+          <p class="text-gray-600 text-sm leading-relaxed line-clamp-2 flex-grow">
             {{ getExcerpt(news.content) }}
           </p>
         </div>
@@ -83,23 +91,23 @@ import { useRouter } from 'vue-router'
 import api from '../services/api'
 
 const router = useRouter()
-const newsList = ref([])
+const featuredList = ref([])
 const loading = ref(false)
 
-const fetchNews = async () => {
+const fetchFeaturedNews = async () => {
   loading.value = true
   try {
-    const response = await api.get('/news/daily')
-    newsList.value = response.data.data || response.data || []
+    const response = await api.get('/news/featured')
+    featuredList.value = response.data.data || response.data || []
   } catch (error) {
-    newsList.value = []
+    featuredList.value = []
   } finally {
     loading.value = false
   }
 }
 
 onMounted(() => {
-  fetchNews()
+  fetchFeaturedNews()
 })
 
 const openNews = (slugOrId) => {
@@ -121,10 +129,19 @@ const formatDate = (dateString) => {
   return date.toLocaleDateString('pt-BR')
 }
 
-const getExcerpt = (content, maxLength = 150) => {
+const getExcerpt = (content, maxLength = 100) => {
   if (!content) return ''
-  const text = content.replace(/<[^>]*>/g, '') // Remove HTML tags
+  const text = content.replace(/<[^>]*>/g, '')
   if (text.length <= maxLength) return text
   return text.substring(0, maxLength) + '...'
 }
 </script>
+
+<style scoped>
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+</style>
