@@ -3,11 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
-use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 
 class CategoryController extends Controller
 {
-    public function index()
+    // listar todas as categorias disponiveis
+    public function index(): JsonResponse
     {
         $categories = Category::withCount('news')
             ->orderBy('name')
@@ -16,7 +17,8 @@ class CategoryController extends Controller
         return response()->json($categories);
     }
     
-    public function show($slug)
+    // mostra detalhes de uma categoria especifica
+    public function show(string $slug): JsonResponse
     {
         $category = Category::where('slug', $slug)
             ->withCount('news')

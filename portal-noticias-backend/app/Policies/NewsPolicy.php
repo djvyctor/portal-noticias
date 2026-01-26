@@ -18,7 +18,7 @@ class NewsPolicy
 
     /**
      * Determine whether the user can view the model.
-     * Autor, Admin e Editor podem ver (Editor precisa ver para editar qualquer notícia).
+     * Autor Admin e Editor podem ver
      */
     public function view(User $user, News $news): bool
     {

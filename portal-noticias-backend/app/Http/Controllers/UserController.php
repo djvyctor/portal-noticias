@@ -2,18 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\UserStoreRequest;
+use App\Http\Requests\UserUpdateRequest;
 use App\Models\User;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
 
 class UserController extends Controller
 {
+    use ApiResponse;
+
+    // lista todos os usuários
     public function index()
     {
-        if (!auth()->user()->isAdmin()) {
-            return response()->json(['message' => 'Não autorizado.'], 403);
-        }
+        $this->ensureAdmin();
 
         $users = User::select('id', 'name', 'email', 'role', 'created_at')
             ->orderBy('created_at', 'desc')
@@ -22,57 +25,40 @@ class UserController extends Controller
         return response()->json($users);
     }
 
-    public function store(Request $request)
+    // cria um novo usuário
+    public function store(UserStoreRequest $request)
     {
-        if (!auth()->user()->isAdmin()) {
-            return response()->json(['message' => 'Não autorizado.'], 403);
-        }
-
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8',
-            'role' => 'required|in:admin,editor,jornalista',
-        ]);
-        $name = ucwords(strtolower(trim($request->name)));
+        $entry = $request->validated();
 
         $user = User::create([
-            'name' => $name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => $request->role,
+            'name' => format_name($entry['name']),
+            'email' => $entry['email'],
+            'password' => Hash::make($entry['password']),
+            'role' => $entry['role'],
         ]);
 
         return response()->json($user, 201);
     }
 
-    public function update(Request $request, User $user)
+    // atualiza um usuário
+    public function update(UserUpdateRequest $request, User $user)
     {
-        if (!auth()->user()->isAdmin()) {
-            return response()->json(['message' => 'Não autorizado.'], 403);
+        $entry = $request->validated();
+
+        if (isset($entry['name'])) {
+            $user->name = format_name($entry['name']);
         }
 
-        $request->validate([
-            'name' => 'sometimes|string|max:255',
-            'email' => 'sometimes|string|email|max:255|unique:users,email,' . $user->id,
-            'password' => 'sometimes|null|string|min:8',
-            'role' => 'sometimes|in:admin,editor,jornalista',
-        ]);
-
-        if ($request->has('name')) {
-            $user->name = ucwords(strtolower(trim($request->name)));
+        if (isset($entry['email'])) {
+            $user->email = $entry['email'];
         }
 
-        if ($request->has('email')) {
-            $user->email = $request->email;
+        if (isset($entry['password']) && $entry['password']) {
+            $user->password = Hash::make($entry['password']);
         }
 
-        if ($request->has('password') && $request->password) {
-            $user->password = Hash::make($request->password);
-        }
-
-        if ($request->has('role')) {
-            $user->role = $request->role;
+        if (isset($entry['role'])) {
+            $user->role = $entry['role'];
         }
 
         $user->save();
@@ -80,13 +66,13 @@ class UserController extends Controller
         return response()->json($user);
     }
 
+    // deleta um usuário
     public function destroy(User $user)
     {
-        if (!auth()->user()->isAdmin()) {
-            return response()->json(['message' => 'Não autorizado.'], 403);
-        }
+        $this->ensureAdmin();
+
         if ($user->id === auth()->user()->id) {
-            return response()->json(['message' => 'Não é possível excluir o próprio usuário.'], 400);
+            return $this->errorResponse('Não é possível excluir o próprio usuário.', 400);
         }
 
         $user->delete();
@@ -94,24 +80,33 @@ class UserController extends Controller
         return response()->json(null, 204);
     }
 
+    // exibe detalhes de um usuário
     public function show(User $user)
     {
-        if (!auth()->user()->isAdmin()) {
-            return response()->json(['message' => 'Não autorizado.'], 403);
-        }
+        $this->ensureAdmin();
 
         return response()->json($user);
     }
 
+    // atualiza o nome do usuário autenticado
     public function updateName(Request $request)
     {
-        $user = auth()->user();
         $request->validate([
             'name' => 'required|string|max:255',
         ]);
-        $user->name = ucwords(strtolower(trim($request->name)));
+
+        $user = auth()->user();
+        $user->name = format_name($request->name);
         $user->save();
 
         return response()->json($user);
+    }
+
+    // verifica se o usuário é admin, retorna erro se não for
+    private function ensureAdmin(): void
+    {
+        if (!auth()->user()->isAdmin()) {
+            abort(403, 'Não autorizado.');
+        }
     }
 }

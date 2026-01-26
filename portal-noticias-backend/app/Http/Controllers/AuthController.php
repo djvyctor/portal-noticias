@@ -10,6 +10,10 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
+    // tempo de expiração do token de reset de senha (em minutos)
+    private const PASSWORD_RESET_EXPIRY_MINUTES = 60;
+
+    // registro de usuário e cria um token
     public function register(Request $request)
     {
         $request->validate([
@@ -18,24 +22,17 @@ class AuthController extends Controller
             'password' => 'required|string|min:8|confirmed',
         ]);
 
-        $name = ucwords(strtolower(trim($request->name)));
         $user = User::create([
-            'name' => $name,
+            'name' => format_name($request->name),
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => 'jornalista',
+            'role' => 'jornalista', // medida de segurança - MASS ASSIGNMENT
         ]);
 
-        $token = $user->createToken('auth_token')->plainTextToken;
-
-        return response()->json([
-            'user' => $user,
-            'token' => $token,
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-        ], 201);
+        return $this->createAuthResponse($user, 201);
     }
 
+    // autentica usuário e retorna token
     public function login(Request $request)
     {
         $request->validate([
@@ -51,16 +48,10 @@ class AuthController extends Controller
             ]);
         }
 
-        $token = $user->createToken('auth_token')->plainTextToken;
-
-        return response()->json([
-            'user' => $user,
-            'token' => $token,
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-        ]);
+        return $this->createAuthResponse($user);
     }
 
+    // faz logout do usuário autenticado
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
@@ -70,11 +61,13 @@ class AuthController extends Controller
         ]);
     }
 
+    // retorna dados do usuário autenticado
     public function me(Request $request)
     {
         return response()->json($request->user());
     }
 
+    // gera token para reset de senha
     public function forgotPassword(Request $request)
     {
         $request->validate([
@@ -82,6 +75,7 @@ class AuthController extends Controller
         ]);
 
         $token = \Illuminate\Support\Str::random(64);
+        
         DB::table('password_reset_tokens')->updateOrInsert(
             ['email' => $request->email],
             [
@@ -92,13 +86,15 @@ class AuthController extends Controller
 
         $frontendUrl = env('FRONTEND_URL', 'http://localhost:5173');
         $resetUrl = "{$frontendUrl}/resetar-senha?token={$token}&email=" . urlencode($request->email);
+
         return response()->json([
-            'message' => 'Token de recuperação gerado. Em produção, será enviado por email.',
+            'message' => 'Token de recuperação gerado. Em produção será enviado por email.',
             'token' => $token,
             'reset_url' => $resetUrl
         ]);
     }
 
+    // redefine senha usando token
     public function resetPassword(Request $request)
     {
         $request->validate([
@@ -117,7 +113,7 @@ class AuthController extends Controller
             ], 400);
         }
 
-        if (now()->diffInMinutes($reset->created_at) > 60) {
+        if (now()->diffInMinutes($reset->created_at) > self::PASSWORD_RESET_EXPIRY_MINUTES) {
             DB::table('password_reset_tokens')->where('email', $request->email)->delete();
             return response()->json([
                 'message' => 'Token expirado. Solicite um novo.'
@@ -127,6 +123,7 @@ class AuthController extends Controller
         $user = User::where('email', $request->email)->first();
         $user->password = Hash::make($request->password);
         $user->save();
+        
         DB::table('password_reset_tokens')->where('email', $request->email)->delete();
 
         return response()->json([
@@ -134,6 +131,7 @@ class AuthController extends Controller
         ]);
     }
 
+    // altera senha do usuário autenticado
     public function changePassword(Request $request)
     {
         $request->validate([
@@ -148,11 +146,25 @@ class AuthController extends Controller
                 'message' => 'Senha atual incorreta.'
             ], 400);
         }
+
         $user->password = Hash::make($request->password);
         $user->save();
 
         return response()->json([
             'message' => 'Senha alterada com sucesso!'
         ]);
+    }
+
+    // cria resposta de autenticação padronizada
+    private function createAuthResponse(User $user, int $statusCode = 200)
+    {
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'user' => $user,
+            'token' => $token,
+            'access_token' => $token,
+            'token_type' => 'Bearer',
+        ], $statusCode);
     }
 }

@@ -10,7 +10,7 @@ class UserPolicy
     use HandlesAuthorization;
 
     /**
-     * Determina se o usuário pode ver todos os usuários
+     * se o usuário pode ver todos os usuários
      */
     public function viewAny(User $user)
     {
@@ -18,7 +18,7 @@ class UserPolicy
     }
 
     /**
-     * Determina se o usuário pode ver um usuário específico
+     * se o usuario pode ver um usuário especifico
      */
     public function view(User $user, User $model)
     {
@@ -26,7 +26,7 @@ class UserPolicy
     }
 
     /**
-     * Determina se o usuário pode criar novos usuários
+     * se o usuário pode criar novos usuários
      */
     public function create(User $user)
     {
@@ -34,15 +34,14 @@ class UserPolicy
     }
 
     /**
-     * Determina se o usuário pode atualizar um usuário
+     * se o usuário pode atualizar um usuário
      */
     public function update(User $user, User $model)
     {
         return $user->isAdmin() || $user->id === $model->id;
     }
 
-    /**
-     * Determina se o usuário pode deletar um usuário
+    /**se o usuário pode deletar um usuário
      */
     public function delete(User $user, User $model)
     {
@@ -50,7 +49,7 @@ class UserPolicy
     }
 
     /**
-     * Determina se o usuário pode criar editores
+     * se o usuário pode criar editores
      */
     public function createEditor(User $user)
     {
@@ -58,7 +57,7 @@ class UserPolicy
     }
 
     /**
-     * Determina se o usuário pode criar jornalistas
+     * se o usuário pode criar jornalistas
      */
     public function createJornalista(User $user)
     {

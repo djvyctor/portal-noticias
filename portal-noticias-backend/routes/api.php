@@ -20,12 +20,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/news/{id}/feature', [\App\Http\Controllers\NewsController::class, 'feature']);
     Route::patch('/news/{id}/reject', [\App\Http\Controllers\NewsController::class, 'reject']);
     
-    // Notícias pendentes e rejeitadas (Admin e Editor)
+    // Notícias pendentes e rejeitadas => Admin e Editor
     Route::get('/news/pending', [\App\Http\Controllers\NewsController::class, 'pending']);
     Route::get('/news/rejected', [\App\Http\Controllers\NewsController::class, 'rejected']);
     Route::get('/news/rejected/{userId}', [\App\Http\Controllers\NewsController::class, 'rejected']);
     
-    // Gerenciamento de usuários (apenas Admin)
+    // Gerenciamento de usuários
     Route::apiResource('/admin/users', \App\Http\Controllers\UserController::class);
     Route::post('/me/name', [\App\Http\Controllers\UserController::class, 'updateName']);
 });
