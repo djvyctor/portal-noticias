@@ -2,37 +2,35 @@
 
 namespace Database\Seeders;
 
+use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 
+// cria usuarios iniciais do sistema
 class UserSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
+    // cria usuarios padrao
     public function run(): void
     {
-        // admin
         User::insert([
             [
                 'name' => 'Admin',
                 'email' => 'admin@portaldenoticias.com',
                 'password' => Hash::make('admin123'),
-                'role' => 'admin',
+                'role' => User::ROLE_ADMIN,
             ],
             [
-                'name' => 'editor',
+                'name' => 'Editor',
                 'email' => 'editor@portaldenoticias.com',
                 'password' => Hash::make('editor123'),
-                'role' => 'editor',
+                'role' => User::ROLE_EDITOR,
             ],
             [
-                'name' => 'jornalista',
+                'name' => 'Jornalista',
                 'email' => 'jornalista@portaldenoticias.com',
                 'password' => Hash::make('jornalista123'),
-                'role' => 'jornalista',
+                'role' => User::ROLE_JORNALISTA,
             ],
         ]);
     }

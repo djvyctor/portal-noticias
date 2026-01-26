@@ -5,23 +5,24 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
+// atualiza enum de status da tabela news
+// muda de draft, published, archived
+// para pending, published, rejected
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
+    // atualiza status
     public function up(): void
     {
-        // Atualizar registros existentes de 'draft' para 'pending'
+        // atualiza registros existentes antes de mudar o enum
         DB::table('news')->where('status', 'draft')->update(['status' => 'pending']);
         DB::table('news')->where('status', 'archived')->update(['status' => 'rejected']);
         
-        // Remover a coluna antiga
+        // remove coluna antiga
         Schema::table('news', function (Blueprint $table) {
             $table->dropColumn('status');
         });
         
-        // Adicionar a coluna nova com os valores corretos
+        // adiciona coluna nova com valores corretos
         Schema::table('news', function (Blueprint $table) {
             $table->enum('status', ['pending', 'published', 'rejected'])
                 ->default('pending')
@@ -29,9 +30,7 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
+    // reverte mudanca
     public function down(): void
     {
         Schema::table('news', function (Blueprint $table) {

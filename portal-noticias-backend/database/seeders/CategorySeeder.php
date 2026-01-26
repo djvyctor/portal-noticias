@@ -7,34 +7,27 @@ use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
+// cria categorias iniciais do sistema
 class CategorySeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
+    // cria categorias padrao
     public function run(): void
     {
-        Category::insert([
-            [
-                'name' => 'Esportes',
-                'slug' => Str::slug('Esportes'),
-            ],
-            [
-                'name' => 'Política',
-                'slug' => Str::slug('Política'),
-            ],
-            [
-                'name' => 'Tecnologia',
-                'slug' => Str::slug('Tecnologia'),
-            ],
-            [
-                'name' => 'Economia',
-                'slug' => Str::slug('Economia'),
-            ],
-            [
-                'name' => 'Mundo',
-                'slug' => Str::slug('Mundo'),
-            ],
-        ]);
+        $categories = [
+            'Esportes',
+            'Política',
+            'Tecnologia',
+            'Economia',
+            'Mundo',
+        ];
+
+        $data = array_map(function ($name) {
+            return [
+                'name' => $name,
+                'slug' => Str::slug($name),
+            ];
+        }, $categories);
+
+        Category::insert($data);
     }
 }

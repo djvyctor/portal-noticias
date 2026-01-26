@@ -4,23 +4,20 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+// adiciona coluna role na tabela users
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
+    // adiciona coluna role
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
             $table->enum('role', ['admin', 'editor', 'jornalista'])
-            ->default('jornalista')
-            ->after('email');
+                ->default('jornalista')
+                ->after('email');
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
+    // remove coluna role
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
