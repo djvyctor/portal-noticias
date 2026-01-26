@@ -1,9 +1,9 @@
 <?php
 
 if (!function_exists('format_name')) {
-    // formata o nome do usuário (primeira letra maiúscula de cada palavra)
+    // formata o nome do usuario
     function format_name(string $name): string
     {
-        return \App\Helpers\NameHelper::format($name);
+        return ucwords(strtolower(trim($name)));
     }
 }

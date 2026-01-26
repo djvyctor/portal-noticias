@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class News extends Model
 {
-    // constantes para status das notícias
+    // constantes para status das noticias
     public const STATUS_PENDING = 'pending';
     public const STATUS_PUBLISHED = 'published';
     public const STATUS_REJECTED = 'rejected';
@@ -36,47 +36,67 @@ class News extends Model
         'published_at' => 'datetime',
     ];
 
+    // relacao, uma noticia pertence a um usuario
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
+    // relacao, uma noticia pertence a uma categoria
     public function category()
     {
         return $this->belongsTo(Category::class);
     }
 
-    // scope para notícias publicadas
+    // verifica se a noticia esta publicada
+    public function isPublished(): bool
+    {
+        return $this->status === self::STATUS_PUBLISHED;
+    }
+
+    // verifica se a noticia esta pendente
+    public function isPending(): bool
+    {
+        return $this->status === self::STATUS_PENDING;
+    }
+
+    // verifica se a noticia foi rejeitada
+    public function isRejected(): bool
+    {
+        return $this->status === self::STATUS_REJECTED;
+    }
+
+    // scope para noticias publicadas
     public function scopePublished(Builder $query): Builder
     {
         return $query->where('status', self::STATUS_PUBLISHED);
     }
 
-    // scope para notícias pendentes
+    // scope para noticias pendentes
     public function scopePending(Builder $query): Builder
     {
         return $query->where('status', self::STATUS_PENDING);
     }
 
-    // scope para notícias rejeitadas
+    // scope para noticias rejeitadas
     public function scopeRejected(Builder $query): Builder
     {
         return $query->where('status', self::STATUS_REJECTED);
     }
 
-    // scope para notícias em destaque
+    // scope para noticias em destaque
     public function scopeFeatured(Builder $query): Builder
     {
         return $query->where('is_featured', true);
     }
 
-    // scope para notícias comuns (não destacadas)
+    // scope para noticias comuns
     public function scopeNotFeatured(Builder $query): Builder
     {
         return $query->where('is_featured', false);
     }
 
-    // scope para eager loading padrão de relações
+    // scope para eager loading padrao de relacoes
     public function scopeWithRelations(Builder $query): Builder
     {
         return $query->with(['user:id,name', 'category:id,name,slug']);

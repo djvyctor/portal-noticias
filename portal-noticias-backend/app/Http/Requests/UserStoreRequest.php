@@ -6,13 +6,13 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class UserStoreRequest extends FormRequest
 {
-    // verifica se o usuário tem permissão para criar usuários
+    // verifica se o usuario tem permissao para criar usuarios
     public function authorize(): bool
     {
         return $this->user()->isAdmin();
     }
 
-    // regras de validação para criar usuário
+    // regras de validacao para criar usuario
     public function rules(): array
     {
         return [

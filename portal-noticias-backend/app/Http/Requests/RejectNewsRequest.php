@@ -6,14 +6,14 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class RejectNewsRequest extends FormRequest
 {
-    // verifica se o usuário tem permissão para rejeitar notícias
+    // verifica se o usuario tem permissao para rejeitar noticias
     public function authorize(): bool
     {
         $user = $this->user();
         return $user->isAdmin() || $user->isEditor();
     }
 
-    // regras de validação para rejeitar notícia
+    // regras de validacao para rejeitar noticia
     public function rules(): array
     {
         return [

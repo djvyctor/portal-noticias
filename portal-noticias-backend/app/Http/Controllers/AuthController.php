@@ -10,10 +10,10 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
-    // tempo de expiração do token de reset de senha (em minutos)
+    // tempo de expiracao do token
     private const PASSWORD_RESET_EXPIRY_MINUTES = 60;
 
-    // registro de usuário e cria um token
+    // registro de usuario e cria um token
     public function register(Request $request)
     {
         $request->validate([
@@ -32,7 +32,7 @@ class AuthController extends Controller
         return $this->createAuthResponse($user, 201);
     }
 
-    // autentica usuário e retorna token
+    // autentica usuario e retorna token
     public function login(Request $request)
     {
         $request->validate([
@@ -51,7 +51,7 @@ class AuthController extends Controller
         return $this->createAuthResponse($user);
     }
 
-    // faz logout do usuário autenticado
+    // faz logout do usuario autenticado
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
@@ -61,13 +61,13 @@ class AuthController extends Controller
         ]);
     }
 
-    // retorna dados do usuário autenticado
+    // retorna dados do usuario autenticado
     public function me(Request $request)
     {
         return response()->json($request->user());
     }
 
-    // gera token para reset de senha
+    // gera token para resetar senha
     public function forgotPassword(Request $request)
     {
         $request->validate([
@@ -131,7 +131,7 @@ class AuthController extends Controller
         ]);
     }
 
-    // altera senha do usuário autenticado
+    // altera senha do usuario autenticado
     public function changePassword(Request $request)
     {
         $request->validate([
@@ -155,7 +155,7 @@ class AuthController extends Controller
         ]);
     }
 
-    // cria resposta de autenticação padronizada
+    // cria resposta de autenticacao padronizada
     private function createAuthResponse(User $user, int $statusCode = 200)
     {
         $token = $user->createToken('auth_token')->plainTextToken;

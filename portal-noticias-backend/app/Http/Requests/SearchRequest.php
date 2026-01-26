@@ -6,7 +6,7 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class SearchRequest extends FormRequest
 {
-    // permite busca pública
+    // permite busca publica
     public function authorize(): bool
     {
         return true;

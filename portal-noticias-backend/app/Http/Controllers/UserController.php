@@ -13,7 +13,7 @@ class UserController extends Controller
 {
     use ApiResponse;
 
-    // lista todos os usuários
+    // lista todos os usuarios
     public function index()
     {
         $this->ensureAdmin();
@@ -25,7 +25,7 @@ class UserController extends Controller
         return response()->json($users);
     }
 
-    // cria um novo usuário
+    // cria um novo usuario
     public function store(UserStoreRequest $request)
     {
         $entry = $request->validated();
@@ -40,7 +40,7 @@ class UserController extends Controller
         return response()->json($user, 201);
     }
 
-    // atualiza um usuário
+    // atualiza um usuario
     public function update(UserUpdateRequest $request, User $user)
     {
         $entry = $request->validated();
@@ -66,7 +66,7 @@ class UserController extends Controller
         return response()->json($user);
     }
 
-    // deleta um usuário
+    // deleta um usuario
     public function destroy(User $user)
     {
         $this->ensureAdmin();
@@ -80,7 +80,7 @@ class UserController extends Controller
         return response()->json(null, 204);
     }
 
-    // exibe detalhes de um usuário
+    // exibe detalhes de um usuario
     public function show(User $user)
     {
         $this->ensureAdmin();
@@ -88,7 +88,7 @@ class UserController extends Controller
         return response()->json($user);
     }
 
-    // atualiza o nome do usuário autenticado
+    // atualiza o nome do usuario autenticado
     public function updateName(Request $request)
     {
         $request->validate([
@@ -102,7 +102,7 @@ class UserController extends Controller
         return response()->json($user);
     }
 
-    // verifica se o usuário é admin, retorna erro se não for
+    // verifica se o usuario é admin, retorna erro se não for
     private function ensureAdmin(): void
     {
         if (!auth()->user()->isAdmin()) {

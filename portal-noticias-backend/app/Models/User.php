@@ -10,14 +10,14 @@ use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
+    // constantes para roles dos usuarios
+    public const ROLE_ADMIN = 'admin';
+    public const ROLE_EDITOR = 'editor';
+    public const ROLE_JORNALISTA = 'jornalista';
+
+    // campos que podem ser preenchidos em massa
     protected $fillable = [
         'name',
         'email',
@@ -25,21 +25,13 @@ class User extends Authenticatable
         'role',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
+    // campos que nao devem aparecer em JSON
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
+    // converte tipos automaticamente
     protected function casts(): array
     {
         return [
@@ -48,23 +40,33 @@ class User extends Authenticatable
         ];
     }
 
+    // relacao, um usuario tem muitas noticias
     public function news()
     {
         return $this->hasMany(News::class);
     }
 
+    // verifica se o usuario é admin
     public function isAdmin(): bool
     {
-        return $this->role === 'admin';
+        return $this->role === self::ROLE_ADMIN;
     }
 
+    // verifica se o usuario é editor
     public function isEditor(): bool
     {
-        return $this->role === 'editor';
+        return $this->role === self::ROLE_EDITOR;
     }
 
+    // verifica se o usuario é jornalista
     public function isJornalista(): bool
     {
-        return $this->role === 'jornalista';
+        return $this->role === self::ROLE_JORNALISTA;
+    }
+
+    // verifica se o usuario pode publicar noticias direto
+    public function canPublishDirectly(): bool
+    {
+        return $this->isAdmin() || $this->isEditor();
     }
 }

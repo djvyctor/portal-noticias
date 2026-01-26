@@ -6,13 +6,13 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class UserUpdateRequest extends FormRequest
 {
-    // verifica se o usuário tem permissão para atualizar usuários
+    // verifica se o usuario tem permissao para atualizar usuarios
     public function authorize(): bool
     {
         return $this->user()->isAdmin();
     }
 
-    // regras de validação para atualizar usuário
+    // regras de validacao para atualizar usuario
     public function rules(): array
     {
         $userId = $this->route('user')->id ?? null;

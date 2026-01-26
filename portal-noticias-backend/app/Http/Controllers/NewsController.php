@@ -18,7 +18,7 @@ class NewsController extends Controller
 {
     use AuthorizesRequests, ApiResponse;
 
-    // lista todas as notícias do usuário autenticado
+    // lista todas as noticias do usuario logado
     public function index()
     {
         $news = Auth::user()->news()
@@ -37,7 +37,7 @@ class NewsController extends Controller
         return new NewsResource($news);
     }
 
-    // cria uma noticia, se user for admin ou editor, pode publicar direto -> jornalista precisa de aprovação
+    // cria uma noticia, se user for admin ou editor pode publicar direto -> jornalista precisa de aprovação
     public function store(NewsStoreRequest $request)
     {
         $entry = $request->validated();
@@ -276,7 +276,7 @@ class NewsController extends Controller
 
     // métodos privados auxiliares
 
-    // determina o status inicial da notícia baseado no papel do usuário
+    // determina o status inicial da noticia baseado no papel do usuario
     private function determineStatus($user, array $entry): string
     {
         if (($user->isEditor() || $user->isAdmin()) 
@@ -298,7 +298,7 @@ class NewsController extends Controller
         return null;
     }
 
-    // atualiza a imagem da notícia
+    // atualiza a imagem da noticia
     private function updateImage(Request $request, News $news): void
     {
         if ($request->hasFile('image')) {
@@ -309,7 +309,7 @@ class NewsController extends Controller
         }
     }
 
-    // atualiza campos básicos da notícia
+    // atualiza campos basicos da noticia
     private function updateBasicFields(array $entry, News $news): void
     {
         if (isset($entry['title'])) {
@@ -326,7 +326,7 @@ class NewsController extends Controller
         }
     }
 
-    // atualiza status e destaque baseado nas permissões do usuário
+    // atualiza status e destaque baseado nas permissoes do usuario
     private function updateStatusAndFeatured($user, array $entry, News $news): void
     {
         if ($user->isAdmin() || $user->isEditor()) {
@@ -344,14 +344,14 @@ class NewsController extends Controller
         }
     }
 
-    // verifica se o usuário é admin ou editor
+    // verifica se o usuario é admin ou editor
     private function isAdminOrEditor(): bool
     {
         $user = Auth::user();
         return $user->isAdmin() || $user->isEditor();
     }
 
-    // garante que o usuário é admin ou editor, retorna erro se não for
+    // garante que o usuario é admin ou editor, retorna erro se não for
     private function ensureAdminOrEditor(): void
     {
         if (!$this->isAdminOrEditor()) {
@@ -359,7 +359,7 @@ class NewsController extends Controller
         }
     }
 
-    // valida e retorna um valor de per_page válido
+    // valida e retorna um valor de per_page valido
     private function getValidPerPage($perPage, int $default = 15): int
     {
         $perPage = (int) ($perPage ?: $default);

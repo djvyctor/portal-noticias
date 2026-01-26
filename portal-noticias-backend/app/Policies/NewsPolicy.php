@@ -4,73 +4,59 @@ namespace App\Policies;
 
 use App\Models\News;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
 
 class NewsPolicy
 {
-    /**
-     * Determine whether the user can view any models.
-     */
+    // verifica se o usuario pode ver todas as noticias
     public function viewAny(User $user): bool
     {
         return $user->isAdmin();
     }
 
-    /**
-     * Determine whether the user can view the model.
-     * Autor Admin e Editor podem ver
-     */
+    // verifica se o usuario pode ver uma noticia especifica
     public function view(User $user, News $news): bool
     {
-        return $user->id === $news->user_id || $user->isAdmin() || $user->isEditor();
+        return $this->isOwner($user, $news) || $this->isAdminOrEditor($user);
     }
 
-    /**
-     * Determine whether the user can create models.
-     */
+    // verifica se o usuario pode criar noticias
     public function create(User $user): bool
     {
-        return $user->isAdmin() || $user->isJornalista() || $user->isEditor();
+        return $user->isAdmin() || $user->isEditor() || $user->isJornalista();
     }
 
-    /**
-     * Determine whether the user can update the model.
-     */
+    // verifica se o usuario pode atualizar uma noticia
     public function update(User $user, News $news): bool
     {
-        return $user->id === $news->user_id || $user->isAdmin() || $user->isEditor();
+        return $this->isOwner($user, $news) || $this->isAdminOrEditor($user);
     }
 
-    /**
-     * Determine whether the user can delete the model.
-     */
+    // verifica se o usuario pode deletar uma noticia
     public function delete(User $user, News $news): bool
     {
-        return $user->id === $news->user_id || $user->isAdmin() || $user->isEditor();
+        return $this->isOwner($user, $news) || $this->isAdminOrEditor($user);
     }
 
-    /**
-     * Determine whether the user can restore the model.
-     */
-    public function restore(User $user, News $news): bool
+    // verifica se o usuario pode aprovar uma noticia
+    public function approve(User $user, News $news): bool
     {
-        return false;
+        return $this->isAdminOrEditor($user);
     }
 
-    /**
-     * Determine whether the user can permanently delete the model.
-     */
-    public function forceDelete(User $user, News $news): bool
+    // verifica se o usuario pode rejeitar uma noticia
+    public function reject(User $user, News $news): bool
     {
-        return false;
+        return $this->isAdminOrEditor($user);
     }
 
-    public function approve(User $user, News $news)
+    // verifica se o usuario é o dono da noticia
+    private function isOwner(User $user, News $news): bool
     {
-        return $user->isAdmin() || $user->isEditor();
+        return $user->id === $news->user_id;
     }
 
-    public function reject(User $user, News $news)
+    // verifica se o usuario é admin ou editor
+    private function isAdminOrEditor(User $user): bool
     {
         return $user->isAdmin() || $user->isEditor();
     }

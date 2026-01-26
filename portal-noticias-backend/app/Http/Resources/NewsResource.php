@@ -5,13 +5,10 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+// formata os dados da noticia para retornar na API
 class NewsResource extends JsonResource
 {
-    /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
-     */
+    // transforma o model News em array JSON padronizado
     public function toArray(Request $request): array
     {
         return [
@@ -29,6 +26,7 @@ class NewsResource extends JsonResource
             'published_at' => $this->published_at?->toISOString(),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
+            // inclui dados do usuario apenas se a relacao foi carregada
             'user' => $this->whenLoaded('user', function () {
                 if (!$this->user) {
                     return null;
@@ -39,6 +37,7 @@ class NewsResource extends JsonResource
                     'email' => $this->user->email ?? null,
                 ];
             }),
+            // inclui dados da categoria apenas se a relacao foi carregada
             'category' => $this->whenLoaded('category', function () {
                 if (!$this->category) {
                     return null;

@@ -18,7 +18,7 @@ class NewsStoreRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
-        // Se houver um título, geramos o slug e o adicionamos ao request
+        // Se houver um titulo geramos o slug e o adicionamos ao request
         if ($this->has('title')) {
             $this->merge([
                 'slug' => Str::slug($this->title),
