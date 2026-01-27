@@ -183,6 +183,7 @@
   </div>
 </template>
 
+<script setup>
 /**
  * View NoticiasPendentesView - Moderação de notícias pendentes
  * 
@@ -199,10 +200,10 @@
  * - Apenas Editor e Admin podem acessar
  * - Ambos podem aprovar e rejeitar notícias
  */
-
-<script setup>
 import { ref, onMounted } from 'vue'
-import { newsAPI } from '@/services/api'
+import { newsAPI } from '../../services/api'
+import { formatDate, formatDateTime } from '../../utils/date'
+import { stripHtml } from '../../utils/text'
 
 // Estado do componente
 const loading = ref(false) // Estado de carregamento
@@ -301,42 +302,6 @@ const viewNews = (item) => {
   showViewModal.value = true
 }
 
-/**
- * Remove tags HTML de uma string
- * 
- * @param {string} html - String com HTML
- * @returns {string} Texto sem tags HTML
- */
-const stripHtml = (html) => {
-  if (html == null || html === '') return ''
-  const tmp = document.createElement('div')
-  tmp.innerHTML = String(html)
-  return tmp.textContent || tmp.innerText || ''
-}
-
-/**
- * Formata a data para exibição em formato brasileiro
- * 
- * @param {string|Date} date - Data a ser formatada
- * @returns {string} Data formatada ou '—' se inválida
- */
-const formatDate = (date) => {
-  if (date == null) return '—'
-  const d = new Date(date)
-  return Number.isNaN(d.getTime()) ? '—' : d.toLocaleDateString('pt-BR')
-}
-
-/**
- * Formata data e hora para exibição em formato brasileiro
- * 
- * @param {string|Date} date - Data a ser formatada
- * @returns {string} Data e hora formatadas ou '—' se inválida
- */
-const formatDateTime = (date) => {
-  if (date == null) return '—'
-  const d = new Date(date)
-  return Number.isNaN(d.getTime()) ? '—' : d.toLocaleString('pt-BR')
-}
 
 // Carrega notícias ao montar o componente
 onMounted(() => {

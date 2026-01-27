@@ -185,7 +185,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import api from '@/services/api'
+import { newsAPI, categoryAPI } from '../../services/api'
 
 const route = useRoute()
 const router = useRouter()
@@ -226,7 +226,7 @@ const loadNews = async () => {
   loading.value = true
   error.value = null
   try {
-    const response = await api.get(`/user/news/${route.params.id}`)
+    const response = await newsAPI.show(route.params.id)
     const res = response.data
     news.value = res.data ?? res
     if (!news.value) throw new Error('Notícia não encontrada')
@@ -255,7 +255,7 @@ const loadNews = async () => {
  */
 const loadCategories = async () => {
   try {
-    const response = await api.get('/categories')
+    const response = await categoryAPI.index()
     categories.value = response.data || []
   } catch (err) {
     console.error('Erro ao carregar categorias:', err)
@@ -316,11 +316,7 @@ const handleSubmit = async () => {
       formData.append('image', imageFile.value)
     }
 
-    await api.post(`/user/news/${route.params.id}`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    })
+    await newsAPI.update(route.params.id, formData)
 
     // Redireciona para a lista de notícias após sucesso
     router.push('/painel/noticias')

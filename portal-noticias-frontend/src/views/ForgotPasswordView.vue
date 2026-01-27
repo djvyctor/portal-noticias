@@ -134,7 +134,8 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import api from "@/services/api"
+import { authAPI } from '../services/api'
+import { validateEmail } from '../utils/text'
 
 const router = useRouter()
 
@@ -144,17 +145,6 @@ const success = ref(null)
 const resetUrl = ref(null)
 const email = ref('')
 const emailError = ref(null)
-
-/**
- * Valida o formato de email usando regex
- * 
- * @param {string} email - Email a ser validado
- * @returns {boolean} True se o email for válido
- */
-const validateEmail = (email) => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  return emailRegex.test(email)
-}
 
 /**
  * Processa a solicitação de recuperação de senha
@@ -185,9 +175,7 @@ const handleForgotPassword = async () => {
   }
 
   try {
-    const response = await api.post("/forgot-password", {
-      email: email.value
-    })
+    const response = await authAPI.forgotPassword(email.value)
     
     success.value = "Link de recuperação gerado! Em produção, será enviado por e-mail."
     // Em desenvolvimento, exibe o link na tela

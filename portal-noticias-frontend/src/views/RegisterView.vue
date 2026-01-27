@@ -214,7 +214,8 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import api from "@/services/api"
+import { authAPI } from '../services/api'
+import { validateEmail } from '../utils/text'
 
 const router = useRouter()
 
@@ -230,17 +231,6 @@ const form = reactive({
   password: "",
   password_confirmation: ""
 })
-
-/**
- * Valida o formato de email usando regex
- * 
- * @param {string} email - Email a ser validado
- * @returns {boolean} True se o email for válido
- */
-const validateEmail = (email) => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  return emailRegex.test(email)
-}
 
 /**
  * Processa o registro de um novo usuário
@@ -285,12 +275,12 @@ const handleRegister = async () => {
   }
 
   try {
-    const response = await api.post("/register", {
-      name: form.name,
-      email: form.email,
-      password: form.password,
-      password_confirmation: form.password_confirmation
-    })
+    const response = await authAPI.register(
+      form.name,
+      form.email,
+      form.password,
+      form.password_confirmation
+    )
     
     // Armazena o token de autenticação no localStorage
     localStorage.setItem("token", response.data.token)

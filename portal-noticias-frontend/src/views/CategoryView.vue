@@ -52,12 +52,12 @@
               <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <span v-if="news.published_at">{{ formatDate(news.published_at) }}</span>
-              <span v-else>{{ formatDate(news.created_at) }}</span>
+              <span v-if="news.published_at">{{ formatDateRelative(news.published_at) }}</span>
+              <span v-else>{{ formatDateRelative(news.created_at) }}</span>
             </div>
 
             <p class="text-gray-600 text-sm leading-relaxed line-clamp-3 mb-4 flex-grow">
-              {{ getExcerpt(news.content) }}
+              {{ getExcerpt(news.content, 150) }}
             </p>
           </div>
         </article>
@@ -66,6 +66,7 @@
   </div>
 </template>
 
+<script setup>
 /**
  * View CategoryView - Página de notícias por categoria
  * 
@@ -82,12 +83,12 @@
  * - newsList: Lista de notícias da categoria
  * - category: Dados da categoria atual
  */
-
-<script setup>
 import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Header from '../components/Header.vue'
-import api from '../services/api'
+import { newsAPI, categoryAPI } from '../services/api'
+import { formatDateRelative } from '../utils/date'
+import { getExcerpt } from '../utils/text'
 
 const route = useRoute()
 const router = useRouter()
@@ -106,7 +107,7 @@ const fetchCategoryNews = async () => {
   loading.value = true
   try {
     const slug = route.params.slug
-    const response = await api.get(`/news/category/${slug}`)
+    const response = await newsAPI.byCategory(slug)
     newsList.value = response.data.data || response.data || []
     
     if (newsList.value.length > 0) {
@@ -115,7 +116,7 @@ const fetchCategoryNews = async () => {
     } else {
       // Se não houver notícias, busca categoria diretamente pelo slug
       try {
-        const catResponse = await api.get(`/categories/${slug}`)
+        const catResponse = await categoryAPI.show(slug)
         category.value = catResponse.data
       } catch (err) {
         console.error('Erro ao buscar categoria:', err)
@@ -144,53 +145,6 @@ watch(() => route.params.slug, () => {
  */
 const openNews = (slug) => {
   router.push(`/noticia/${slug}`)
-}
-
-/**
- * Formata a data para exibição relativa (ex: "Há 2 horas", "Há 3 dias")
- * Se a data for muito antiga (> 7 dias), exibe a data formatada em pt-BR
- * 
- * @param {string} dateString - Data em formato ISO string
- * @returns {string} Data formatada para exibição
- */
-const formatDate = (dateString) => {
-  if (!dateString) return ''
-  
-  const date = new Date(dateString)
-  const now = new Date()
-  const diffInHours = Math.floor((now - date) / (1000 * 60 * 60))
-  
-  // Menos de 1 hora
-  if (diffInHours < 1) return 'Há menos de 1 hora'
-  
-  // Menos de 24 horas
-  if (diffInHours < 24) {
-    return `Há ${diffInHours} hora${diffInHours > 1 ? 's' : ''}`
-  }
-  
-  // Menos de 7 dias
-  const diffInDays = Math.floor(diffInHours / 24)
-  if (diffInDays < 7) {
-    return `Há ${diffInDays} dia${diffInDays > 1 ? 's' : ''}`
-  }
-  
-  // Mais de 7 dias - exibe data formatada
-  return date.toLocaleDateString('pt-BR')
-}
-
-/**
- * Extrai um resumo do conteúdo HTML
- * Remove tags HTML e limita o tamanho do texto
- * 
- * @param {string} content - Conteúdo HTML da notícia
- * @param {number} maxLength - Tamanho máximo do resumo (padrão: 150 caracteres)
- * @returns {string} Resumo do conteúdo
- */
-const getExcerpt = (content, maxLength = 150) => {
-  if (!content) return ''
-  const text = content.replace(/<[^>]*>/g, '') // Remove todas as tags HTML
-  if (text.length <= maxLength) return text
-  return text.substring(0, maxLength) + '...'
 }
 
 // Carrega notícias ao montar o componente

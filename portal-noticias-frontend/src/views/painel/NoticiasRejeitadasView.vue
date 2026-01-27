@@ -134,6 +134,7 @@
   </div>
 </template>
 
+<script setup>
 /**
  * View NoticiasRejeitadasView - Lista de notícias rejeitadas do usuário
  * 
@@ -150,11 +151,11 @@
  * - Editar e Reenviar: Redireciona para edição (ao salvar, volta para "pending")
  * - Ver Detalhes: Abre modal com conteúdo completo da notícia
  */
-
-<script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { newsAPI } from '@/services/api'
+import { newsAPI } from '../../services/api'
+import { formatDate, formatDateTime } from '../../utils/date'
+import { stripHtml } from '../../utils/text'
 
 const router = useRouter()
 
@@ -204,40 +205,6 @@ const viewNews = (item) => {
   showViewModal.value = true
 }
 
-/**
- * Remove tags HTML de uma string
- * 
- * @param {string} html - String com HTML
- * @returns {string} Texto sem tags HTML
- */
-const stripHtml = (html) => {
-  if (!html) return ''
-  const tmp = document.createElement('div')
-  tmp.innerHTML = html
-  return tmp.textContent || tmp.innerText || ''
-}
-
-/**
- * Formata a data para exibição em formato brasileiro
- * 
- * @param {string|Date} date - Data a ser formatada
- * @returns {string} Data formatada
- */
-const formatDate = (date) => {
-  if (!date) return ''
-  return new Date(date).toLocaleDateString('pt-BR')
-}
-
-/**
- * Formata data e hora para exibição em formato brasileiro
- * 
- * @param {string|Date} date - Data a ser formatada
- * @returns {string} Data e hora formatadas
- */
-const formatDateTime = (date) => {
-  if (!date) return ''
-  return new Date(date).toLocaleString('pt-BR')
-}
 
 // Carrega notícias ao montar o componente
 onMounted(() => {

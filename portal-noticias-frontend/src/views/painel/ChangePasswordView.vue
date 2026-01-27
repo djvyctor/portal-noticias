@@ -157,9 +157,26 @@
  */
 
 <script setup>
+/**
+ * View ChangePasswordView - Formulário para alterar senha do usuário
+ * 
+ * Esta view permite que usuários autenticados alterem sua própria senha.
+ * 
+ * Funcionalidades:
+ * - Validação de senha atual
+ * - Validação de nova senha (mínimo 8 caracteres)
+ * - Confirmação de nova senha
+ * - Toggle para mostrar/ocultar senhas
+ * - Feedback visual de sucesso/erro
+ * 
+ * Validações:
+ * - Senha atual obrigatória
+ * - Nova senha deve ter no mínimo 8 caracteres
+ * - Confirmação deve coincidir com nova senha
+ */
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import api from '../../services/api'
+import { authAPI } from '../../services/api'
 
 const router = useRouter()
 
@@ -203,11 +220,11 @@ const handleChangePassword = async () => {
   }
 
   try {
-    await api.post("/change-password", {
-      current_password: form.current_password,
-      password: form.password,
-      password_confirmation: form.password_confirmation
-    })
+    await authAPI.changePassword(
+      form.current_password,
+      form.password,
+      form.password_confirmation
+    )
     
     success.value = "Senha alterada com sucesso!"
     

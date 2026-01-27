@@ -157,6 +157,7 @@
   </div>
 </template>
 
+<script setup>
 /**
  * View Login - Página de login do portal
  * 
@@ -175,11 +176,10 @@
  * - showPassword: Controla a visibilidade da senha
  * - emailError: Mensagem de erro específica para o campo de email
  */
-
-<script setup>
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import api from "@/services/api"
+import { authAPI } from '../services/api'
+import { validateEmail } from '../utils/text'
 
 const router = useRouter()
 
@@ -194,17 +194,6 @@ const form = reactive({
   email: "",
   password: ""
 })
-
-/**
- * Valida o formato de email usando regex
- * 
- * @param {string} email - Email a ser validado
- * @returns {boolean} True se o email for válido
- */
-const validateEmail = (email) => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  return emailRegex.test(email)
-}
 
 /**
  * Processa o login do usuário
@@ -233,7 +222,7 @@ const handleLogin = async () => {
   }
 
   try {
-    const response = await api.post("/login", form)
+    const response = await authAPI.login(form.email, form.password)
     
     // Armazena o token de autenticação no localStorage
     localStorage.setItem("token", response.data.token)

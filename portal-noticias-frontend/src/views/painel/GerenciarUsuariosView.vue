@@ -180,6 +180,7 @@
   </div>
 </template>
 
+<script setup>
 /**
  * View GerenciarUsuariosView - Gerenciamento de usuários (apenas Admin)
  * 
@@ -198,10 +199,11 @@
  * - Admin não pode excluir a si mesmo
  * - Senha é opcional na edição (mantém a atual se não informada)
  */
-
-<script setup>
 import { ref, onMounted } from 'vue'
-import { userAPI } from '@/services/api'
+import { userAPI } from '../../services/api'
+import { formatDate } from '../../utils/date'
+import { capitalizeWords } from '../../utils/text'
+import { getRoleLabel, getRoleBadgeClass } from '../../utils/status'
 
 // Estado do componente
 const loading = ref(false) // Estado de carregamento
@@ -231,14 +233,7 @@ const editingUserId = ref(null) // ID do usuário sendo editado
  * @param {Event} event - Evento de input do campo nome
  */
 const capitalizeName = (event) => {
-  const words = event.target.value.split(' ')
-  const capitalizedWords = words.map(word => {
-    if (word.length > 0) {
-      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-    }
-    return word
-  })
-  formData.value.name = capitalizedWords.join(' ')
+  formData.value.name = capitalizeWords(event.target.value)
 }
 
 /**
@@ -353,46 +348,6 @@ const closeModals = () => {
   formError.value = null
 }
 
-/**
- * Retorna o label legível do papel do usuário
- * 
- * @param {string} role - Papel do usuário
- * @returns {string} Label do papel
- */
-const getRoleLabel = (role) => {
-  const labels = {
-    admin: 'Administrador',
-    editor: 'Editor',
-    jornalista: 'Jornalista'
-  }
-  return labels[role] || role
-}
-
-/**
- * Retorna as classes CSS para o badge do papel
- * 
- * @param {string} role - Papel do usuário
- * @returns {string} Classes CSS do Tailwind
- */
-const getRoleBadgeClass = (role) => {
-  const classes = {
-    admin: 'bg-purple-100 text-purple-800',
-    editor: 'bg-blue-100 text-blue-800',
-    jornalista: 'bg-green-100 text-green-800'
-  }
-  return classes[role] || 'bg-gray-100 text-gray-800'
-}
-
-/**
- * Formata a data para exibição em formato brasileiro
- * 
- * @param {string|Date} date - Data a ser formatada
- * @returns {string} Data formatada
- */
-const formatDate = (date) => {
-  if (!date) return ''
-  return new Date(date).toLocaleDateString('pt-BR')
-}
 
 // Carrega usuários ao montar o componente
 onMounted(() => {

@@ -97,7 +97,7 @@
               </div>
               
               <p class="text-gray-600 text-sm line-clamp-2">
-                {{ getExcerpt(news.content) }}
+                {{ getExcerpt(news.content, 150) }}
               </p>
             </div>
 
@@ -122,6 +122,7 @@
   </div>
 </template>
 
+<script setup>
 /**
  * View MinhasNoticiasView - Lista de notícias do usuário
  * 
@@ -137,11 +138,12 @@
  * - Editar notícia (redireciona para página de edição)
  * - Excluir notícia (com confirmação)
  */
-
-<script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import api from '../../services/api'
+import { newsAPI } from '../../services/api'
+import { formatDate } from '../../utils/date'
+import { getExcerpt } from '../../utils/text'
+import { getStatusLabel, getStatusBadgeClass } from '../../utils/status'
 
 const router = useRouter()
 
@@ -168,7 +170,7 @@ const filteredNews = computed(() => {
 const loadNews = async () => {
   loading.value = true
   try {
-    const response = await api.get('/user/news')
+    const response = await newsAPI.list()
     allNews.value = response.data.data || response.data || []
   } catch (error) {
     console.error('Erro ao carregar notícias:', error)
@@ -196,7 +198,7 @@ const deleteNews = async (id) => {
   if (!confirm('Tem certeza que deseja excluir esta notícia?')) return
   
   try {
-    await api.delete(`/user/news/${id}`)
+    await newsAPI.delete(id)
     // Recarrega a lista para garantir que está atualizada
     loadNews()
     alert('Notícia excluída com sucesso!')
@@ -204,62 +206,6 @@ const deleteNews = async (id) => {
     console.error('Erro ao excluir:', error)
     alert('Erro ao excluir notícia: ' + (error.response?.data?.message || error.message))
   }
-}
-
-/**
- * Retorna o label legível do status da notícia
- * 
- * @param {string} status - Status da notícia
- * @returns {string} Label do status
- */
-const getStatusLabel = (status) => {
-  const labels = {
-    draft: 'Rascunho',
-    published: 'Publicada',
-    pending: 'Pendente'
-  }
-  return labels[status] || status
-}
-
-/**
- * Retorna as classes CSS para o badge de status
- * 
- * @param {string} status - Status da notícia
- * @returns {string} Classes CSS do Tailwind
- */
-const getStatusBadgeClass = (status) => {
-  const classes = {
-    draft: 'bg-gray-100 text-gray-700',
-    published: 'bg-green-100 text-green-700',
-    pending: 'bg-yellow-100 text-yellow-700'
-  }
-  return classes[status] || 'bg-gray-100 text-gray-700'
-}
-
-/**
- * Formata a data para exibição em formato brasileiro
- * 
- * @param {string} dateString - Data em formato ISO string
- * @returns {string} Data formatada
- */
-const formatDate = (dateString) => {
-  if (!dateString) return ''
-  const date = new Date(dateString)
-  return date.toLocaleDateString('pt-BR')
-}
-
-/**
- * Extrai um resumo do conteúdo HTML
- * 
- * @param {string} content - Conteúdo HTML da notícia
- * @param {number} maxLength - Tamanho máximo do resumo (padrão: 150 caracteres)
- * @returns {string} Resumo do conteúdo
- */
-const getExcerpt = (content, maxLength = 150) => {
-  if (!content) return ''
-  const text = content.replace(/<[^>]*>/g, '') // Remove todas as tags HTML
-  if (text.length <= maxLength) return text
-  return text.substring(0, maxLength) + '...'
 }
 
 // Carrega notícias ao montar o componente

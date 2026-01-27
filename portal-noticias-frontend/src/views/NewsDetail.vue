@@ -57,7 +57,7 @@
           <svg class="w-5 h-5 mr-2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
-          <span>{{ formatDate(news.published_at || news.created_at) }}</span>
+          <span>{{ formatDateFull(news.published_at || news.created_at) }}</span>
         </div>
         <span class="text-gray-300">•</span>
         <div class="flex items-center">
@@ -104,8 +104,9 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import api from '../services/api'
+import { newsAPI } from '../services/api'
 import Header from '../components/Header.vue'
+import { formatDateFull, formatTime } from '../utils/date'
 
 const route = useRoute()
 const router = useRouter()
@@ -125,7 +126,7 @@ const fetchNews = async () => {
   
   try {
     const slug = route.params.slug
-    const response = await api.get(`/news/${slug}`)
+    const response = await newsAPI.bySlug(slug)
     const res = response.data
     // Tenta obter dados de res.data, caso contrário usa res diretamente
     news.value = res.data ?? res
@@ -139,39 +140,6 @@ const fetchNews = async () => {
   } finally {
     loading.value = false
   }
-}
-
-/**
- * Formata a data para exibição completa em português
- * Exemplo: "26 de janeiro de 2026"
- * 
- * @param {string} dateString - Data em formato ISO string
- * @returns {string} Data formatada
- */
-const formatDate = (dateString) => {
-  if (!dateString) return ''
-  const date = new Date(dateString)
-  return date.toLocaleDateString('pt-BR', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric'
-  })
-}
-
-/**
- * Formata o horário para exibição
- * Exemplo: "14:30"
- * 
- * @param {string} dateString - Data em formato ISO string
- * @returns {string} Horário formatado
- */
-const formatTime = (dateString) => {
-  if (!dateString) return ''
-  const date = new Date(dateString)
-  return date.toLocaleTimeString('pt-BR', {
-    hour: '2-digit',
-    minute: '2-digit'
-  })
 }
 
 // Carrega a notícia ao montar o componente

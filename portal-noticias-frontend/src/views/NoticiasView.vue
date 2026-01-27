@@ -48,11 +48,11 @@
             <div class="flex items-center text-xs text-gray-400 mb-3">
               <span>{{ news.author_name || news.user?.name || 'Autor' }}</span>
               <span class="mx-1">•</span>
-              <span v-if="news.published_at">{{ formatDate(news.published_at) }}</span>
-              <span v-else>{{ formatDate(news.created_at) }}</span>
+              <span v-if="news.published_at">{{ formatDateRelative(news.published_at) }}</span>
+              <span v-else>{{ formatDateRelative(news.created_at) }}</span>
             </div>
             <p class="text-gray-600 text-sm leading-relaxed line-clamp-3 mb-4 flex-grow">
-              {{ getExcerpt(news.content) }}
+              {{ getExcerpt(news.content, 150) }}
             </p>
           </div>
         </article>
@@ -61,6 +61,7 @@
   </div>
 </template>
 
+<script setup>
 /**
  * View NoticiasView - Página de notícias do dia
  * 
@@ -75,12 +76,12 @@
  * - loading: Exibe mensagem de carregamento
  * - newsList: Lista de notícias do dia
  */
-
-<script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import Header from '@/components/Header.vue'
-import { newsAPI } from '@/services/api'
+import Header from '../components/Header.vue'
+import { newsAPI } from '../services/api'
+import { formatDateRelative } from '../utils/date'
+import { getExcerpt } from '../utils/text'
 
 const router = useRouter()
 
@@ -114,32 +115,6 @@ const fetchNews = async () => {
  */
 const openNews = (slug) => {
   router.push(`/noticia/${slug}`)
-}
-
-/**
- * Formata a data para exibição em formato brasileiro
- * 
- * @param {string} d - Data em formato ISO string
- * @returns {string} Data formatada (ex: "26/01/2026")
- */
-const formatDate = (d) => {
-  if (!d) return ''
-  const date = new Date(d)
-  return date.toLocaleDateString('pt-BR')
-}
-
-/**
- * Extrai um resumo do conteúdo HTML
- * Remove tags HTML e limita o tamanho do texto
- * 
- * @param {string} content - Conteúdo HTML da notícia
- * @param {number} max - Tamanho máximo do resumo (padrão: 150 caracteres)
- * @returns {string} Resumo do conteúdo
- */
-const getExcerpt = (content, max = 150) => {
-  if (!content) return ''
-  const text = content.replace(/<[^>]*>/g, '') // Remove todas as tags HTML
-  return text.length <= max ? text : text.slice(0, max) + '...'
 }
 
 // Carrega notícias ao montar o componente

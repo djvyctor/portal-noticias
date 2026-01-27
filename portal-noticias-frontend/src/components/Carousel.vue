@@ -65,7 +65,7 @@
               </h2>
 
               <p class="hidden md:block text-gray-300 text-lg mt-2 max-w-2xl font-light">
-                {{ getExcerpt(item.content) }}
+                {{ getExcerpt(item.content, 200) }}
               </p>
             </div>
           </div>
@@ -113,6 +113,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../services/api'
+import { getExcerpt } from '../utils/text'
 
 const router = useRouter()
 
@@ -121,6 +122,9 @@ const currentIndex = ref(0) // Índice da notícia atual exibida no carrossel
 let timer = null // Referência ao timer do auto-play
 const highlights = ref([]) // Lista de notícias em destaque
 const loading = ref(true) // Estado de carregamento
+
+// Constantes
+const AUTO_SLIDE_INTERVAL = 5000 // Intervalo do auto-play em milissegundos (5 segundos)
 
 /**
  * Busca notícias em destaque da API para o carrossel
@@ -172,7 +176,7 @@ const prev = () => {
 const startSlide = () => {
   stopSlide() // Garante que não há timer duplicado
   if (highlights.value.length <= 1) return // Não precisa de auto-play se houver apenas uma notícia
-  timer = setInterval(next, 5000) // Avança a cada 5 segundos
+  timer = setInterval(next, AUTO_SLIDE_INTERVAL)
 }
 
 /**
@@ -184,21 +188,6 @@ const stopSlide = () => {
     clearInterval(timer)
     timer = null
   }
-}
-
-/**
- * Extrai um resumo do conteúdo HTML
- * Remove tags HTML e limita o tamanho do texto
- * 
- * @param {string} content - Conteúdo HTML da notícia
- * @param {number} maxLength - Tamanho máximo do resumo (padrão: 200 caracteres)
- * @returns {string} Resumo do conteúdo
- */
-const getExcerpt = (content, maxLength = 200) => {
-  if (!content) return ''
-  const text = content.replace(/<[^>]*>/g, '') // Remove todas as tags HTML
-  if (text.length <= maxLength) return text
-  return text.substring(0, maxLength) + '...'
 }
 
 /**

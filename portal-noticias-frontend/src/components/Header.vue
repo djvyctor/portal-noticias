@@ -134,6 +134,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../services/api'
+import { categoryAPI } from '../services/api'
 
 const router = useRouter()
 
@@ -142,6 +143,9 @@ const isMobileMenuOpen = ref(false) // Controla abertura/fechamento do menu mobi
 const categories = ref([]) // Lista de categorias carregadas da API
 const user = ref(null) // Dados do usuário logado
 const searchQuery = ref('') // Termo de busca digitado
+
+// Constantes
+const MIN_SEARCH_LENGTH = 2 // Tamanho mínimo do termo de busca
 
 /**
  * Computed que verifica se o usuário está autenticado
@@ -158,7 +162,7 @@ const isLoggedIn = computed(() => {
  */
 const loadCategories = async () => {
   try {
-    const response = await api.get('/categories')
+    const response = await categoryAPI.index()
     categories.value = response.data || []
   } catch (error) {
     console.error('Erro ao carregar categorias:', error)
@@ -189,7 +193,7 @@ const loadUser = () => {
  */
 const handleSearch = () => {
   const trimmedQuery = searchQuery.value.trim()
-  if (trimmedQuery.length >= 2) {
+  if (trimmedQuery.length >= MIN_SEARCH_LENGTH) {
     router.push(`/busca?q=${encodeURIComponent(trimmedQuery)}`)
     searchQuery.value = '' // Limpa o campo após buscar
   }
@@ -201,7 +205,7 @@ const handleSearch = () => {
  */
 const handleMobileSearch = () => {
   const query = prompt('Digite sua busca:')
-  if (query && query.trim().length >= 2) {
+  if (query && query.trim().length >= MIN_SEARCH_LENGTH) {
     router.push(`/busca?q=${encodeURIComponent(query.trim())}`)
   }
 }

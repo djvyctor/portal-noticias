@@ -140,7 +140,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import api from '../../services/api'
+import { newsAPI, categoryAPI } from '../../services/api'
 
 const router = useRouter()
 
@@ -168,7 +168,7 @@ const form = reactive({
  */
 const loadCategories = async () => {
   try {
-    const response = await api.get('/categories')
+    const response = await categoryAPI.index()
     categories.value = response.data || []
   } catch (err) {
     console.error('Erro ao carregar categorias:', err)
@@ -249,11 +249,7 @@ const saveNews = async () => {
       formData.append('image', imageFile.value)
     }
 
-    await api.post('/user/news', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    })
+    await newsAPI.create(formData)
 
     // Redireciona para a lista de notícias após sucesso
     router.push('/painel/noticias')

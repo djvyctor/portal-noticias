@@ -101,7 +101,7 @@
               </div>
               
               <p class="text-gray-600 text-sm line-clamp-2">
-                {{ getExcerpt(news.content) }}
+                {{ getExcerpt(news.content, 150) }}
               </p>
             </div>
 
@@ -146,6 +146,7 @@
   </div>
 </template>
 
+<script setup>
 /**
  * View TodasNoticiasView - Moderação de todas as notícias
  * 
@@ -163,11 +164,12 @@
  * - Editor pode aprovar e editar notícias
  * - Admin pode aprovar, editar e destacar notícias
  */
-
-<script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import api, { newsAPI } from '@/services/api'
+import { newsAPI } from '../../services/api'
+import { formatDate } from '../../utils/date'
+import { getExcerpt } from '../../utils/text'
+import { getStatusLabel, getStatusBadgeClass } from '../../utils/status'
 
 const router = useRouter()
 
@@ -271,63 +273,6 @@ const editNews = (id) => {
   router.push(`/painel/noticias/editar/${id}`)
 }
 
-/**
- * Retorna o label legível do status da notícia
- * 
- * @param {string} status - Status da notícia
- * @returns {string} Label do status
- */
-const getStatusLabel = (status) => {
-  const labels = {
-    pending: 'Pendente',
-    published: 'Publicada',
-    rejected: 'Rejeitada',
-    draft: 'Pendente'
-  }
-  return labels[status] || status
-}
-
-/**
- * Retorna as classes CSS para o badge de status
- * 
- * @param {string} status - Status da notícia
- * @returns {string} Classes CSS do Tailwind
- */
-const getStatusBadgeClass = (status) => {
-  const classes = {
-    pending: 'bg-orange-100 text-orange-700',
-    published: 'bg-green-100 text-green-700',
-    rejected: 'bg-red-100 text-red-700',
-    draft: 'bg-orange-100 text-orange-700'
-  }
-  return classes[status] || 'bg-gray-100 text-gray-700'
-}
-
-/**
- * Formata a data para exibição em formato brasileiro
- * 
- * @param {string} dateString - Data em formato ISO string
- * @returns {string} Data formatada
- */
-const formatDate = (dateString) => {
-  if (!dateString) return ''
-  const date = new Date(dateString)
-  return date.toLocaleDateString('pt-BR')
-}
-
-/**
- * Extrai um resumo do conteúdo HTML
- * 
- * @param {string} content - Conteúdo HTML da notícia
- * @param {number} maxLength - Tamanho máximo do resumo (padrão: 150 caracteres)
- * @returns {string} Resumo do conteúdo
- */
-const getExcerpt = (content, maxLength = 150) => {
-  if (!content) return ''
-  const text = content.replace(/<[^>]*>/g, '') // Remove todas as tags HTML
-  if (text.length <= maxLength) return text
-  return text.substring(0, maxLength) + '...'
-}
 
 // Carrega dados ao montar o componente
 onMounted(() => {

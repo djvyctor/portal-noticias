@@ -265,6 +265,7 @@
   </div>
 </template>
 
+<script setup>
 /**
  * View PainelView - Página principal do painel de redação
  * 
@@ -282,11 +283,11 @@
  * - Editor/Admin veem opções adicionais de moderação
  * - Admin vê opção de gerenciar usuários
  */
-
-<script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import api from '../services/api'
+import { authAPI, newsAPI } from '../services/api'
+import { formatDate } from '../utils/date'
+import { getStatusLabel, getStatusBadgeClass, getRoleName, getRoleDescription } from '../utils/status'
 
 const router = useRouter()
 
@@ -308,7 +309,7 @@ const pendingCount = ref(0) // Contador de notícias pendentes (Editor/Admin)
  */
 const loadUserData = async () => {
   try {
-    const response = await api.get('/user')
+    const response = await authAPI.me()
     user.value = response.data
     localStorage.setItem('user', JSON.stringify(response.data))
   } catch (error) {
@@ -324,7 +325,7 @@ const loadUserData = async () => {
  */
 const loadStats = async () => {
   try {
-    const response = await api.get('/user/news')
+    const response = await newsAPI.list()
     const news = response.data.data || response.data || []
     
     // Calcula estatísticas das notícias do usuário
@@ -335,7 +336,7 @@ const loadStats = async () => {
     // Se for Editor ou Admin, carrega notícias pendentes de TODOS os usuários
     if (user.value?.role === 'editor' || user.value?.role === 'admin') {
       try {
-        const allNewsResponse = await api.get('/news/all')
+        const allNewsResponse = await newsAPI.all()
         const allNews = allNewsResponse.data.data || allNewsResponse.data || []
         pendingCount.value = allNews.filter(n => n.status === 'pending').length
       } catch (error) {
@@ -355,7 +356,7 @@ const loadStats = async () => {
 const loadRecentNews = async () => {
   loadingNews.value = true
   try {
-    const response = await api.get('/user/news')
+    const response = await newsAPI.list()
     const news = response.data.data || response.data || []
     recentNews.value = news.slice(0, 5) // Pega apenas as 5 primeiras
   } catch (error) {
@@ -372,7 +373,7 @@ const loadRecentNews = async () => {
  */
 const handleLogout = async () => {
   try {
-    await api.post('/logout')
+    await authAPI.logout()
   } catch (error) {
     // Continua mesmo se houver erro no logout (pode ser token expirado)
     console.error('Erro no logout:', error)
@@ -382,78 +383,6 @@ const handleLogout = async () => {
     localStorage.removeItem('user')
     router.push('/login')
   }
-}
-
-/**
- * Retorna o nome legível do papel do usuário
- * 
- * @param {string} role - Papel do usuário (admin, editor, jornalista)
- * @returns {string} Nome legível do papel
- */
-const getRoleName = (role) => {
-  const roles = {
-    admin: 'Administrador',
-    editor: 'Editor',
-    jornalista: 'Jornalista'
-  }
-  return roles[role] || role
-}
-
-/**
- * Retorna a descrição do papel do usuário
- * 
- * @param {string} role - Papel do usuário
- * @returns {string} Descrição das permissões do papel
- */
-const getRoleDescription = (role) => {
-  const descriptions = {
-    admin: 'Você tem acesso total ao sistema. Pode criar, editar, publicar e destacar qualquer notícia.',
-    editor: 'Você pode criar notícias e também editar e publicar notícias de outros jornalistas.',
-    jornalista: 'Você pode criar e gerenciar suas próprias notícias.'
-  }
-  return descriptions[role] || 'Bem-vindo ao painel de redação!'
-}
-
-/**
- * Formata a data para exibição em formato brasileiro
- * 
- * @param {string} dateString - Data em formato ISO string
- * @returns {string} Data formatada (ex: "26/01/2026")
- */
-const formatDate = (dateString) => {
-  if (!dateString) return ''
-  const date = new Date(dateString)
-  return date.toLocaleDateString('pt-BR')
-}
-
-/**
- * Retorna o label legível do status da notícia
- * 
- * @param {string} status - Status da notícia
- * @returns {string} Label do status
- */
-const getStatusLabel = (status) => {
-  const labels = {
-    draft: 'Rascunho',
-    published: 'Publicada',
-    pending: 'Pendente'
-  }
-  return labels[status] || status
-}
-
-/**
- * Retorna as classes CSS para o badge de status
- * 
- * @param {string} status - Status da notícia
- * @returns {string} Classes CSS do Tailwind
- */
-const getStatusBadgeClass = (status) => {
-  const classes = {
-    draft: 'bg-gray-100 text-gray-700',
-    published: 'bg-green-100 text-green-700',
-    pending: 'bg-yellow-100 text-yellow-700'
-  }
-  return classes[status] || 'bg-gray-100 text-gray-700'
 }
 
 // Carrega dados ao montar o componente

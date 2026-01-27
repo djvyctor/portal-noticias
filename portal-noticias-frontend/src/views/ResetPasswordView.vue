@@ -154,7 +154,8 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import api from "@/services/api"
+import { authAPI } from '../services/api'
+import { validateEmail } from '../utils/text'
 
 const route = useRoute()
 const router = useRouter()
@@ -171,17 +172,6 @@ const form = reactive({
   password: '',
   password_confirmation: ''
 })
-
-/**
- * Valida o formato de email usando regex
- * 
- * @param {string} email - Email a ser validado
- * @returns {boolean} True se o email for válido
- */
-const validateEmail = (email) => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  return emailRegex.test(email)
-}
 
 /**
  * Processa a redefinição de senha
@@ -226,7 +216,12 @@ const handleResetPassword = async () => {
   }
 
   try {
-    await api.post("/reset-password", form)
+    await authAPI.resetPassword(
+      form.email,
+      form.token,
+      form.password,
+      form.password_confirmation
+    )
     
     success.value = "Senha redefinida com sucesso! Redirecionando para o login..."
     
