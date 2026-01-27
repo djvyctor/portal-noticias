@@ -183,21 +183,44 @@
   </div>
 </template>
 
+/**
+ * View NoticiasPendentesView - Moderação de notícias pendentes
+ * 
+ * Esta view permite que Editores e Admins visualizem, aprovem ou rejeitem notícias pendentes.
+ * 
+ * Funcionalidades:
+ * - Lista paginada de notícias pendentes de aprovação
+ * - Visualização completa da notícia em modal
+ * - Aprovação de notícias (publica automaticamente)
+ * - Rejeição de notícias com motivo obrigatório
+ * - Paginação para navegar entre páginas de resultados
+ * 
+ * Permissões:
+ * - Apenas Editor e Admin podem acessar
+ * - Ambos podem aprovar e rejeitar notícias
+ */
+
 <script setup>
 import { ref, onMounted } from 'vue'
 import { newsAPI } from '@/services/api'
 
-const loading = ref(false)
-const error = ref(null)
-const approveError = ref(null)
-const news = ref({ data: [], current_page: 1, last_page: 1 })
-const showRejectModal = ref(false)
-const showViewModal = ref(false)
-const newsToReject = ref(null)
-const viewingNews = ref(null)
-const rejectionReason = ref('')
-const rejectError = ref(null)
+// Estado do componente
+const loading = ref(false) // Estado de carregamento
+const error = ref(null) // Mensagem de erro geral
+const approveError = ref(null) // Mensagem de erro ao aprovar
+const news = ref({ data: [], current_page: 1, last_page: 1 }) // Dados paginados das notícias
+const showRejectModal = ref(false) // Controla exibição do modal de rejeição
+const showViewModal = ref(false) // Controla exibição do modal de visualização
+const newsToReject = ref(null) // Notícia que será rejeitada
+const viewingNews = ref(null) // Notícia sendo visualizada
+const rejectionReason = ref('') // Motivo da rejeição
+const rejectError = ref(null) // Mensagem de erro ao rejeitar
 
+/**
+ * Carrega notícias pendentes da API com paginação
+ * 
+ * @param {number} page - Número da página (padrão: 1)
+ */
 const loadNews = async (page = 1) => {
   loading.value = true
   error.value = null
@@ -220,11 +243,17 @@ const loadNews = async (page = 1) => {
   }
 }
 
+/**
+ * Aprova uma notícia pendente (publica automaticamente)
+ * 
+ * @param {number} id - ID da notícia
+ */
 const approveNews = async (id) => {
   approveError.value = null
   try {
     await newsAPI.approve(id)
     alert('Notícia aprovada com sucesso!')
+    // Recarrega a página atual para atualizar a lista
     await loadNews(news.value.current_page || 1)
   } catch (err) {
     console.error('Erro ao aprovar:', err)
@@ -233,30 +262,51 @@ const approveNews = async (id) => {
   }
 }
 
+/**
+ * Abre o modal de rejeição para uma notícia
+ * 
+ * @param {Object} item - Objeto da notícia a ser rejeitada
+ */
 const openRejectModal = (item) => {
   newsToReject.value = item
   rejectionReason.value = ''
   rejectError.value = null
   showRejectModal.value = true
-  showViewModal.value = false
+  showViewModal.value = false // Fecha modal de visualização se estiver aberto
 }
 
+/**
+ * Rejeita uma notícia com o motivo fornecido
+ */
 const rejectNews = async () => {
   rejectError.value = null
   try {
     await newsAPI.reject(newsToReject.value.id, rejectionReason.value)
     showRejectModal.value = false
+    // Recarrega a página atual para atualizar a lista
     await loadNews(news.value.current_page || 1)
   } catch (err) {
     rejectError.value = 'Erro ao rejeitar notícia: ' + (err.response?.data?.message || err.message)
+    console.error('Erro ao rejeitar notícia:', err)
   }
 }
 
+/**
+ * Abre o modal de visualização completa da notícia
+ * 
+ * @param {Object} item - Objeto da notícia a ser visualizada
+ */
 const viewNews = (item) => {
   viewingNews.value = item
   showViewModal.value = true
 }
 
+/**
+ * Remove tags HTML de uma string
+ * 
+ * @param {string} html - String com HTML
+ * @returns {string} Texto sem tags HTML
+ */
 const stripHtml = (html) => {
   if (html == null || html === '') return ''
   const tmp = document.createElement('div')
@@ -264,18 +314,31 @@ const stripHtml = (html) => {
   return tmp.textContent || tmp.innerText || ''
 }
 
+/**
+ * Formata a data para exibição em formato brasileiro
+ * 
+ * @param {string|Date} date - Data a ser formatada
+ * @returns {string} Data formatada ou '—' se inválida
+ */
 const formatDate = (date) => {
   if (date == null) return '—'
   const d = new Date(date)
   return Number.isNaN(d.getTime()) ? '—' : d.toLocaleDateString('pt-BR')
 }
 
+/**
+ * Formata data e hora para exibição em formato brasileiro
+ * 
+ * @param {string|Date} date - Data a ser formatada
+ * @returns {string} Data e hora formatadas ou '—' se inválida
+ */
 const formatDateTime = (date) => {
   if (date == null) return '—'
   const d = new Date(date)
   return Number.isNaN(d.getTime()) ? '—' : d.toLocaleString('pt-BR')
 }
 
+// Carrega notícias ao montar o componente
 onMounted(() => {
   loadNews()
 })

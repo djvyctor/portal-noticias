@@ -122,40 +122,76 @@
   </div>
 </template>
 
+/**
+ * View MinhasNoticiasView - Lista de notícias do usuário
+ * 
+ * Esta view exibe todas as notícias criadas pelo usuário autenticado.
+ * 
+ * Funcionalidades:
+ * - Lista todas as notícias do usuário
+ * - Filtros por status (Todas, Publicadas, Rascunhos)
+ * - Edição e exclusão de notícias
+ * - Contadores de notícias por status
+ * 
+ * Ações disponíveis:
+ * - Editar notícia (redireciona para página de edição)
+ * - Excluir notícia (com confirmação)
+ */
+
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../../services/api'
 
 const router = useRouter()
-const allNews = ref([])
-const loading = ref(false)
-const filterStatus = ref('all')
 
+// Estado do componente
+const allNews = ref([]) // Lista de todas as notícias do usuário
+const loading = ref(false) // Estado de carregamento
+const filterStatus = ref('all') // Filtro atual (all, published, draft)
+
+// Computed properties
 const publishedCount = computed(() => allNews.value.filter(n => n.status === 'published').length)
 const draftCount = computed(() => allNews.value.filter(n => n.status === 'draft').length)
 
+/**
+ * Filtra as notícias baseado no status selecionado
+ */
 const filteredNews = computed(() => {
   if (filterStatus.value === 'all') return allNews.value
   return allNews.value.filter(n => n.status === filterStatus.value)
 })
 
+/**
+ * Carrega todas as notícias do usuário da API
+ */
 const loadNews = async () => {
   loading.value = true
   try {
     const response = await api.get('/user/news')
     allNews.value = response.data.data || response.data || []
   } catch (error) {
+    console.error('Erro ao carregar notícias:', error)
     allNews.value = []
   } finally {
     loading.value = false
   }
 }
 
+/**
+ * Redireciona para a página de edição da notícia
+ * 
+ * @param {number} id - ID da notícia
+ */
 const editNews = (id) => {
   router.push(`/painel/noticias/editar/${id}`)
 }
 
+/**
+ * Exclui uma notícia após confirmação do usuário
+ * 
+ * @param {number} id - ID da notícia
+ */
 const deleteNews = async (id) => {
   if (!confirm('Tem certeza que deseja excluir esta notícia?')) return
   
@@ -170,6 +206,12 @@ const deleteNews = async (id) => {
   }
 }
 
+/**
+ * Retorna o label legível do status da notícia
+ * 
+ * @param {string} status - Status da notícia
+ * @returns {string} Label do status
+ */
 const getStatusLabel = (status) => {
   const labels = {
     draft: 'Rascunho',
@@ -179,6 +221,12 @@ const getStatusLabel = (status) => {
   return labels[status] || status
 }
 
+/**
+ * Retorna as classes CSS para o badge de status
+ * 
+ * @param {string} status - Status da notícia
+ * @returns {string} Classes CSS do Tailwind
+ */
 const getStatusBadgeClass = (status) => {
   const classes = {
     draft: 'bg-gray-100 text-gray-700',
@@ -188,19 +236,33 @@ const getStatusBadgeClass = (status) => {
   return classes[status] || 'bg-gray-100 text-gray-700'
 }
 
+/**
+ * Formata a data para exibição em formato brasileiro
+ * 
+ * @param {string} dateString - Data em formato ISO string
+ * @returns {string} Data formatada
+ */
 const formatDate = (dateString) => {
   if (!dateString) return ''
   const date = new Date(dateString)
   return date.toLocaleDateString('pt-BR')
 }
 
+/**
+ * Extrai um resumo do conteúdo HTML
+ * 
+ * @param {string} content - Conteúdo HTML da notícia
+ * @param {number} maxLength - Tamanho máximo do resumo (padrão: 150 caracteres)
+ * @returns {string} Resumo do conteúdo
+ */
 const getExcerpt = (content, maxLength = 150) => {
   if (!content) return ''
-  const text = content.replace(/<[^>]*>/g, '')
+  const text = content.replace(/<[^>]*>/g, '') // Remove todas as tags HTML
   if (text.length <= maxLength) return text
   return text.substring(0, maxLength) + '...'
 }
 
+// Carrega notícias ao montar o componente
 onMounted(() => {
   loadNews()
 })

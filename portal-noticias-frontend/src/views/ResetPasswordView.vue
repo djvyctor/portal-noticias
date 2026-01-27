@@ -172,25 +172,38 @@ const form = reactive({
   password_confirmation: ''
 })
 
-// Função para validar formato de email
+/**
+ * Valida o formato de email usando regex
+ * 
+ * @param {string} email - Email a ser validado
+ * @returns {boolean} True se o email for válido
+ */
 const validateEmail = (email) => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   return emailRegex.test(email)
 }
 
+/**
+ * Processa a redefinição de senha
+ * 
+ * Valida os dados do formulário (email, token, senha, confirmação)
+ * e faz a requisição para redefinir a senha. Em caso de sucesso,
+ * redireciona para a página de login.
+ */
 const handleResetPassword = async () => {
   loading.value = true
   error.value = null
   success.value = null
   emailError.value = null
 
-  // Validação de email
+  // Validação de email obrigatório
   if (!form.email) {
     error.value = "Por favor, informe seu e-mail."
     loading.value = false
     return
   }
 
+  // Validação de formato de email
   if (!validateEmail(form.email)) {
     emailError.value = "Por favor, informe um e-mail válido (ex: nome@exemplo.com)"
     error.value = "Por favor, informe um e-mail válido."
@@ -198,12 +211,14 @@ const handleResetPassword = async () => {
     return
   }
 
+  // Validação: senhas devem coincidir
   if (form.password !== form.password_confirmation) {
     error.value = "As senhas não coincidem."
     loading.value = false
     return
   }
 
+  // Validação: senha deve ter no mínimo 8 caracteres
   if (form.password.length < 8) {
     error.value = "A senha deve ter no mínimo 8 caracteres."
     loading.value = false
@@ -215,10 +230,12 @@ const handleResetPassword = async () => {
     
     success.value = "Senha redefinida com sucesso! Redirecionando para o login..."
     
+    // Redireciona para o login após 2 segundos (permite visualizar mensagem de sucesso)
     setTimeout(() => {
       router.push("/login")
     }, 2000)
   } catch (err) {
+    // Tratamento de erros específicos
     if (err.response?.status === 400) {
       error.value = err.response.data.message || "Token inválido ou expirado."
     } else if (err.response?.status === 422) {
@@ -226,11 +243,13 @@ const handleResetPassword = async () => {
     } else {
       error.value = err.response?.data?.message || "Ocorreu um erro ao redefinir a senha."
     }
+    console.error('Erro ao redefinir senha:', err)
   } finally {
     loading.value = false
   }
 }
 
+// Verifica se token e email foram fornecidos na URL ao montar o componente
 onMounted(() => {
   if (!route.query.token || !route.query.email) {
     error.value = "Token ou e-mail não fornecido. Verifique o link de recuperação."

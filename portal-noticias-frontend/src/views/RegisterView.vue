@@ -231,25 +231,38 @@ const form = reactive({
   password_confirmation: ""
 })
 
-// Função para validar formato de email
+/**
+ * Valida o formato de email usando regex
+ * 
+ * @param {string} email - Email a ser validado
+ * @returns {boolean} True se o email for válido
+ */
 const validateEmail = (email) => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   return emailRegex.test(email)
 }
 
+/**
+ * Processa o registro de um novo usuário
+ * 
+ * Valida os dados do formulário (email, senha, confirmação de senha)
+ * e faz a requisição de registro. Em caso de sucesso, armazena o token
+ * e dados do usuário no localStorage e redireciona para o painel.
+ */
 const handleRegister = async () => {
   loading.value = true
   error.value = null
   success.value = null
   emailError.value = null
 
-  // Validação de email
+  // Validação de email obrigatório
   if (!form.email) {
     error.value = "Por favor, informe seu e-mail."
     loading.value = false
     return
   }
 
+  // Validação de formato de email
   if (!validateEmail(form.email)) {
     emailError.value = "Por favor, informe um e-mail válido (ex: nome@exemplo.com)"
     error.value = "Por favor, informe um e-mail válido."
@@ -257,13 +270,14 @@ const handleRegister = async () => {
     return
   }
 
-  // Validação básica
+  // Validação: senhas devem coincidir
   if (form.password !== form.password_confirmation) {
     error.value = "As senhas não coincidem."
     loading.value = false
     return
   }
 
+  // Validação: senha deve ter no mínimo 8 caracteres
   if (form.password.length < 8) {
     error.value = "A senha deve ter no mínimo 8 caracteres."
     loading.value = false
@@ -278,17 +292,20 @@ const handleRegister = async () => {
       password_confirmation: form.password_confirmation
     })
     
-    // Armazena o token e dados do usuário
+    // Armazena o token de autenticação no localStorage
     localStorage.setItem("token", response.data.token)
+    
+    // Armazena os dados do usuário no localStorage
     localStorage.setItem("user", JSON.stringify(response.data.user))
     
     success.value = "Conta criada com sucesso! Redirecionando..."
     
-    // Redireciona para o painel após 1 segundo
+    // Redireciona para o painel após 1 segundo (permite visualizar mensagem de sucesso)
     setTimeout(() => {
       router.push("/painel")
     }, 1000)
   } catch (err) {
+    // Tratamento de erros específicos
     if (err.response?.status === 422) {
       const errors = err.response.data.errors
       if (errors.email) {
@@ -301,6 +318,7 @@ const handleRegister = async () => {
     } else {
       error.value = err.response?.data?.message || "Ocorreu um erro ao criar a conta."
     }
+    console.error('Erro no registro:', err)
   } finally {
     loading.value = false
   }

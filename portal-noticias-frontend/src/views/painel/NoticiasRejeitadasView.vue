@@ -134,18 +134,42 @@
   </div>
 </template>
 
+/**
+ * View NoticiasRejeitadasView - Lista de notícias rejeitadas do usuário
+ * 
+ * Esta view exibe todas as notícias que foram rejeitadas pelo editor/admin.
+ * 
+ * Funcionalidades:
+ * - Lista todas as notícias rejeitadas do usuário autenticado
+ * - Exibe o motivo da rejeição
+ * - Permite editar e reenviar notícias rejeitadas
+ * - Visualização completa da notícia em modal
+ * - Paginação para navegar entre páginas de resultados
+ * 
+ * Ações disponíveis:
+ * - Editar e Reenviar: Redireciona para edição (ao salvar, volta para "pending")
+ * - Ver Detalhes: Abre modal com conteúdo completo da notícia
+ */
+
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { newsAPI } from '@/services/api'
 
 const router = useRouter()
-const loading = ref(false)
-const error = ref(null)
-const news = ref({ data: [], current_page: 1, last_page: 1 })
-const showViewModal = ref(false)
-const viewingNews = ref(null)
 
+// Estado do componente
+const loading = ref(false) // Estado de carregamento
+const error = ref(null) // Mensagem de erro
+const news = ref({ data: [], current_page: 1, last_page: 1 }) // Dados paginados das notícias
+const showViewModal = ref(false) // Controla exibição do modal de visualização
+const viewingNews = ref(null) // Notícia sendo visualizada
+
+/**
+ * Carrega notícias rejeitadas do usuário da API
+ * 
+ * @param {number} page - Número da página (padrão: 1)
+ */
 const loadNews = async (page = 1) => {
   loading.value = true
   error.value = null
@@ -154,34 +178,68 @@ const loadNews = async (page = 1) => {
     news.value = response.data
   } catch (err) {
     error.value = 'Erro ao carregar notícias: ' + (err.response?.data?.message || err.message)
+    console.error('Erro ao carregar notícias rejeitadas:', err)
   } finally {
     loading.value = false
   }
 }
 
+/**
+ * Redireciona para a página de edição da notícia
+ * Ao salvar uma notícia rejeitada, ela volta para status "pending"
+ * 
+ * @param {number} id - ID da notícia
+ */
 const editNews = (id) => {
   router.push({ name: 'editar-noticia', params: { id } })
 }
 
+/**
+ * Abre o modal de visualização completa da notícia
+ * 
+ * @param {Object} item - Objeto da notícia a ser visualizada
+ */
 const viewNews = (item) => {
   viewingNews.value = item
   showViewModal.value = true
 }
 
+/**
+ * Remove tags HTML de uma string
+ * 
+ * @param {string} html - String com HTML
+ * @returns {string} Texto sem tags HTML
+ */
 const stripHtml = (html) => {
+  if (!html) return ''
   const tmp = document.createElement('div')
   tmp.innerHTML = html
   return tmp.textContent || tmp.innerText || ''
 }
 
+/**
+ * Formata a data para exibição em formato brasileiro
+ * 
+ * @param {string|Date} date - Data a ser formatada
+ * @returns {string} Data formatada
+ */
 const formatDate = (date) => {
+  if (!date) return ''
   return new Date(date).toLocaleDateString('pt-BR')
 }
 
+/**
+ * Formata data e hora para exibição em formato brasileiro
+ * 
+ * @param {string|Date} date - Data a ser formatada
+ * @returns {string} Data e hora formatadas
+ */
 const formatDateTime = (date) => {
+  if (!date) return ''
   return new Date(date).toLocaleString('pt-BR')
 }
 
+// Carrega notícias ao montar o componente
 onMounted(() => {
   loadNews()
 })

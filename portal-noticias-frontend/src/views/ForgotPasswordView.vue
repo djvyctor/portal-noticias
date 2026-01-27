@@ -145,12 +145,23 @@ const resetUrl = ref(null)
 const email = ref('')
 const emailError = ref(null)
 
-// Função para validar formato de email
+/**
+ * Valida o formato de email usando regex
+ * 
+ * @param {string} email - Email a ser validado
+ * @returns {boolean} True se o email for válido
+ */
 const validateEmail = (email) => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   return emailRegex.test(email)
 }
 
+/**
+ * Processa a solicitação de recuperação de senha
+ * 
+ * Envia uma requisição para o backend gerar um link de recuperação.
+ * Em desenvolvimento, o link é exibido na tela. Em produção, seria enviado por email.
+ */
 const handleForgotPassword = async () => {
   loading.value = true
   error.value = null
@@ -158,13 +169,14 @@ const handleForgotPassword = async () => {
   resetUrl.value = null
   emailError.value = null
 
-  // Validação de email
+  // Validação de email obrigatório
   if (!email.value) {
     error.value = "Por favor, informe seu e-mail."
     loading.value = false
     return
   }
 
+  // Validação de formato de email
   if (!validateEmail(email.value)) {
     emailError.value = "Por favor, informe um e-mail válido (ex: nome@exemplo.com)"
     error.value = "Por favor, informe um e-mail válido."
@@ -178,26 +190,34 @@ const handleForgotPassword = async () => {
     })
     
     success.value = "Link de recuperação gerado! Em produção, será enviado por e-mail."
+    // Em desenvolvimento, exibe o link na tela
     resetUrl.value = response.data.reset_url
   } catch (err) {
+    // Tratamento de erros específicos
     if (err.response?.status === 422) {
       error.value = "E-mail não encontrado em nosso sistema."
     } else {
       error.value = err.response?.data?.message || "Ocorreu um erro ao processar sua solicitação."
     }
+    console.error('Erro na recuperação de senha:', err)
   } finally {
     loading.value = false
   }
 }
 
+/**
+ * Extrai token e email da URL de recuperação e redireciona para a página de reset
+ * 
+ * Usado em desenvolvimento para facilitar o acesso à página de reset de senha
+ */
 const goToReset = () => {
   if (resetUrl.value) {
-    // Extrai token e email da URL
+    // Extrai token e email da URL de recuperação
     const url = new URL(resetUrl.value)
     const token = url.searchParams.get('token')
     const email = url.searchParams.get('email')
     
-    // Redireciona usando o router
+    // Redireciona para a página de reset com os parâmetros na query string
     router.push({
       path: '/resetar-senha',
       query: { token, email }

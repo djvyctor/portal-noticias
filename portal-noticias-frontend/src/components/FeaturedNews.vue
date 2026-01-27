@@ -91,50 +91,89 @@ import { useRouter } from 'vue-router'
 import api from '../services/api'
 
 const router = useRouter()
-const featuredList = ref([])
-const loading = ref(false)
 
+// Estado do componente
+const featuredList = ref([]) // Lista de notícias em destaque
+const loading = ref(false) // Estado de carregamento
+
+/**
+ * Busca notícias em destaque da API
+ * Exibe até 6 notícias no grid
+ */
 const fetchFeaturedNews = async () => {
   loading.value = true
   try {
     const response = await api.get('/news/featured')
+    // Tenta obter dados de response.data.data, caso contrário usa response.data diretamente
     featuredList.value = response.data.data || response.data || []
   } catch (error) {
+    console.error('Erro ao carregar notícias em destaque:', error)
     featuredList.value = []
   } finally {
     loading.value = false
   }
 }
 
-onMounted(() => {
-  fetchFeaturedNews()
-})
-
+/**
+ * Redireciona para a página de detalhes da notícia
+ * 
+ * @param {string|number} slugOrId - Slug ou ID da notícia
+ */
 const openNews = (slugOrId) => {
   router.push(`/noticia/${slugOrId}`)
 }
 
+/**
+ * Formata a data para exibição relativa (ex: "Há 2 horas", "Há 3 dias")
+ * Se a data for muito antiga (> 7 dias), exibe a data formatada em pt-BR
+ * 
+ * @param {string} dateString - Data em formato ISO string
+ * @returns {string} Data formatada para exibição
+ */
 const formatDate = (dateString) => {
   if (!dateString) return ''
+  
   const date = new Date(dateString)
   const now = new Date()
   const diffInHours = Math.floor((now - date) / (1000 * 60 * 60))
   
+  // Menos de 1 hora
   if (diffInHours < 1) return 'Há menos de 1 hora'
-  if (diffInHours < 24) return `Há ${diffInHours} hora${diffInHours > 1 ? 's' : ''}`
   
+  // Menos de 24 horas
+  if (diffInHours < 24) {
+    return `Há ${diffInHours} hora${diffInHours > 1 ? 's' : ''}`
+  }
+  
+  // Menos de 7 dias
   const diffInDays = Math.floor(diffInHours / 24)
-  if (diffInDays < 7) return `Há ${diffInDays} dia${diffInDays > 1 ? 's' : ''}`
+  if (diffInDays < 7) {
+    return `Há ${diffInDays} dia${diffInDays > 1 ? 's' : ''}`
+  }
   
+  // Mais de 7 dias - exibe data formatada
   return date.toLocaleDateString('pt-BR')
 }
 
+/**
+ * Extrai um resumo do conteúdo HTML
+ * Remove tags HTML e limita o tamanho do texto
+ * 
+ * @param {string} content - Conteúdo HTML da notícia
+ * @param {number} maxLength - Tamanho máximo do resumo (padrão: 100 caracteres)
+ * @returns {string} Resumo do conteúdo
+ */
 const getExcerpt = (content, maxLength = 100) => {
   if (!content) return ''
-  const text = content.replace(/<[^>]*>/g, '')
+  const text = content.replace(/<[^>]*>/g, '') // Remove todas as tags HTML
   if (text.length <= maxLength) return text
   return text.substring(0, maxLength) + '...'
 }
+
+// Carrega notícias ao montar o componente
+onMounted(() => {
+  fetchFeaturedNews()
+})
 </script>
 
 <style scoped>

@@ -117,41 +117,75 @@
   </div>
 </template>
 
+/**
+ * View CriarNoticiaView - Formulário para criar nova notícia
+ * 
+ * Esta view permite que usuários autenticados criem novas notícias.
+ * 
+ * Funcionalidades:
+ * - Formulário completo para criação de notícia (título, categoria, conteúdo, imagem)
+ * - Preview da imagem antes do upload
+ * - Validação de campos obrigatórios
+ * - Diferentes comportamentos baseados no papel do usuário:
+ *   - Jornalista: Cria como "pending" (aguarda aprovação)
+ *   - Editor/Admin: Pode publicar diretamente
+ * 
+ * Campos do formulário:
+ * - Título (obrigatório)
+ * - Categoria (obrigatório)
+ * - Imagem (opcional)
+ * - Conteúdo (obrigatório)
+ */
+
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../../services/api'
 
 const router = useRouter()
-const categories = ref([])
-const saving = ref(false)
-const error = ref(null)
-const imagePreview = ref(null)
-const imageFile = ref(null)
 
+// Estado do componente
+const categories = ref([]) // Lista de categorias disponíveis
+const saving = ref(false) // Estado de salvamento
+const error = ref(null) // Mensagem de erro
+const imagePreview = ref(null) // URL da preview da imagem
+const imageFile = ref(null) // Arquivo de imagem selecionado
+
+// Verifica o papel do usuário
 const user = JSON.parse(localStorage.getItem('user') || '{}')
 const isJornalista = user.role === 'jornalista'
 
+// Dados do formulário
 const form = reactive({
   title: '',
   content: '',
   category_id: '',
-  status: 'pending' // Sempre cria como pendente de aprovação
+  status: 'pending' // Status padrão (será alterado baseado no papel do usuário)
 })
 
+/**
+ * Carrega as categorias disponíveis da API
+ */
 const loadCategories = async () => {
   try {
     const response = await api.get('/categories')
     categories.value = response.data || []
   } catch (err) {
+    console.error('Erro ao carregar categorias:', err)
     categories.value = []
   }
 }
 
+/**
+ * Processa a seleção de imagem e cria preview
+ * 
+ * @param {Event} event - Evento de mudança do input de arquivo
+ */
 const handleImageChange = (event) => {
   const file = event.target.files[0]
   if (file) {
     imageFile.value = file
+    // Cria preview da imagem usando FileReader
     const reader = new FileReader()
     reader.onload = (e) => {
       imagePreview.value = e.target.result
@@ -160,16 +194,23 @@ const handleImageChange = (event) => {
   }
 }
 
+/**
+ * Remove a imagem selecionada e limpa o preview
+ */
 const removeImage = () => {
   imagePreview.value = null
   imageFile.value = null
 }
 
+/**
+ * Processa o envio do formulário (publicar)
+ * Define o status baseado no papel do usuário antes de salvar
+ */
 const handleSubmit = async () => {
-  // Verifica o papel do usuário
+  // Verifica o papel do usuário novamente (pode ter mudado)
   const user = JSON.parse(localStorage.getItem('user') || '{}')
   
-  // Editor e Admin podem publicar direto
+  // Editor e Admin podem publicar diretamente
   if (user.role === 'editor' || user.role === 'admin') {
     form.status = 'published'
   } else {
@@ -180,22 +221,30 @@ const handleSubmit = async () => {
   await saveNews()
 }
 
+/**
+ * Salva a notícia como rascunho (sempre como pending)
+ */
 const saveDraft = async () => {
   form.status = 'pending'
   await saveNews()
 }
 
+/**
+ * Salva a notícia na API usando FormData para suportar upload de imagem
+ */
 const saveNews = async () => {
   saving.value = true
   error.value = null
 
   try {
+    // Cria FormData para enviar dados e arquivo
     const formData = new FormData()
     formData.append('title', form.title)
     formData.append('content', form.content)
     formData.append('category_id', form.category_id)
     formData.append('status', form.status)
     
+    // Adiciona imagem se houver
     if (imageFile.value) {
       formData.append('image', imageFile.value)
     }
@@ -206,14 +255,21 @@ const saveNews = async () => {
       }
     })
 
+    // Redireciona para a lista de notícias após sucesso
     router.push('/painel/noticias')
   } catch (err) {
     error.value = err.response?.data?.message || 'Erro ao salvar notícia'
+    console.error('Erro ao salvar notícia:', err)
   } finally {
     saving.value = false
   }
 }
 
+/**
+ * Retorna o texto do botão de submit baseado no papel do usuário
+ * 
+ * @returns {string} Texto do botão
+ */
 const getSubmitButtonText = () => {
   if (isJornalista) {
     return 'Enviar para Aprovação'
@@ -221,6 +277,7 @@ const getSubmitButtonText = () => {
   return 'Publicar Notícia'
 }
 
+// Carrega categorias ao montar o componente
 onMounted(() => {
   loadCategories()
 })

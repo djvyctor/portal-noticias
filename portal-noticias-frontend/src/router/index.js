@@ -1,3 +1,15 @@
+/**
+ * Configuração de rotas da aplicação
+ * 
+ * Este arquivo define todas as rotas da aplicação e os guards de navegação
+ * que controlam o acesso baseado em autenticação e permissões de usuário.
+ * 
+ * Guards de navegação:
+ * - requireAuth: Exige que o usuário esteja autenticado
+ * - requireEditorOrAdmin: Exige permissão de editor ou admin
+ * - requireAdmin: Exige permissão de administrador
+ */
+
 import { createRouter, createWebHistory } from "vue-router"
 import Login from "@/views/Login.vue"
 import RegisterView from "@/views/RegisterView.vue"
@@ -20,7 +32,15 @@ import GerenciarUsuariosView from "@/views/painel/GerenciarUsuariosView.vue"
 import NoticiasPendentesView from "@/views/painel/NoticiasPendentesView.vue"
 import NoticiasRejeitadasView from "@/views/painel/NoticiasRejeitadasView.vue"
 
-// Guard de autenticação - verifica se o usuário está logado
+/**
+ * Guard de autenticação - verifica se o usuário está logado
+ * 
+ * @param {Object} to - Rota de destino
+ * @param {Object} from - Rota de origem
+ * @param {Function} next - Função para continuar a navegação
+ * 
+ * Redireciona para /login se não houver token de autenticação
+ */
 const requireAuth = (to, from, next) => {
   const token = localStorage.getItem('token')
   if (!token) {
@@ -30,7 +50,15 @@ const requireAuth = (to, from, next) => {
   }
 }
 
-// Guard para Editor/Admin
+/**
+ * Guard para Editor/Admin - verifica se o usuário tem permissão de editor ou admin
+ * 
+ * @param {Object} to - Rota de destino
+ * @param {Object} from - Rota de origem
+ * @param {Function} next - Função para continuar a navegação
+ * 
+ * Redireciona para /login se não autenticado ou para /painel se não tiver permissão
+ */
 const requireEditorOrAdmin = (to, from, next) => {
   const token = localStorage.getItem('token')
   const user = JSON.parse(localStorage.getItem('user') || '{}')
@@ -45,7 +73,15 @@ const requireEditorOrAdmin = (to, from, next) => {
   }
 }
 
-// Guard apenas para Admin
+/**
+ * Guard apenas para Admin - verifica se o usuário é administrador
+ * 
+ * @param {Object} to - Rota de destino
+ * @param {Object} from - Rota de origem
+ * @param {Function} next - Função para continuar a navegação
+ * 
+ * Redireciona para /login se não autenticado ou para /painel se não for admin
+ */
 const requireAdmin = (to, from, next) => {
   const token = localStorage.getItem('token')
   const user = JSON.parse(localStorage.getItem('user') || '{}')
@@ -60,7 +96,15 @@ const requireAdmin = (to, from, next) => {
   }
 }
 
+/**
+ * Definição de todas as rotas da aplicação
+ * 
+ * Rotas públicas: Home, detalhes de notícia, categorias, busca
+ * Rotas de autenticação: Login, registro, recuperação de senha
+ * Rotas do painel: Requerem autenticação e podem ter restrições de permissão
+ */
 const routes = [
+  // ========== ROTAS PÚBLICAS ==========
   {
     path: "/",
     name: "home",
@@ -96,11 +140,13 @@ const routes = [
     name: "search",
     component: SearchView
   },
+  
+  // ========== ROTAS DE AUTENTICAÇÃO ==========
   {
     path: "/login",
     name: "login",
     component: Login,
-    meta: { hideLayout: true }
+    meta: { hideLayout: true } // Esconde o layout padrão (Header/Footer)
   },
   {
     path: "/registro",
@@ -120,6 +166,8 @@ const routes = [
     component: ResetPasswordView,
     meta: { hideLayout: true }
   },
+  
+  // ========== ROTAS DO PAINEL (Requerem autenticação) ==========
   {
     path: "/painel",
     name: "painel",
@@ -148,13 +196,13 @@ const routes = [
     path: "/painel/moderacao",
     name: "moderacao",
     component: TodasNoticiasView,
-    beforeEnter: requireEditorOrAdmin
+    beforeEnter: requireEditorOrAdmin // Apenas Editor ou Admin
   },
   {
     path: "/painel/noticias-pendentes",
     name: "noticias-pendentes",
     component: NoticiasPendentesView,
-    beforeEnter: requireEditorOrAdmin
+    beforeEnter: requireEditorOrAdmin // Apenas Editor ou Admin
   },
   {
     path: "/painel/noticias-rejeitadas",
@@ -166,7 +214,7 @@ const routes = [
     path: "/painel/usuarios",
     name: "gerenciar-usuarios",
     component: GerenciarUsuariosView,
-    beforeEnter: requireAdmin
+    beforeEnter: requireAdmin // Apenas Admin
   },
   {
     path: "/painel/alterar-senha",
@@ -176,6 +224,12 @@ const routes = [
   }
 ]
 
+/**
+ * Cria e exporta a instância do router
+ * 
+ * Usa createWebHistory para URLs limpas (sem hash)
+ * Exemplo: /noticia/titulo-da-noticia ao invés de /#/noticia/titulo-da-noticia
+ */
 export default createRouter({
   history: createWebHistory(),
   routes

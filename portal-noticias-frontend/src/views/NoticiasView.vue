@@ -61,6 +61,21 @@
   </div>
 </template>
 
+/**
+ * View NoticiasView - Página de notícias do dia
+ * 
+ * Esta view exibe as últimas notícias publicadas do dia atual.
+ * 
+ * Funcionalidades:
+ * - Lista notícias do dia (publicadas recentemente)
+ * - Grid responsivo com cards de notícias
+ * - Exibe contador de notícias encontradas
+ * 
+ * Estados:
+ * - loading: Exibe mensagem de carregamento
+ * - newsList: Lista de notícias do dia
+ */
+
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
@@ -68,37 +83,65 @@ import Header from '@/components/Header.vue'
 import { newsAPI } from '@/services/api'
 
 const router = useRouter()
-const newsList = ref([])
-const loading = ref(false)
 
+// Estado do componente
+const newsList = ref([]) // Lista de notícias do dia
+const loading = ref(false) // Estado de carregamento
+
+/**
+ * Busca as notícias do dia da API
+ * Usa o método newsAPI.daily() para obter as últimas notícias publicadas
+ */
 const fetchNews = async () => {
   loading.value = true
   try {
     const response = await newsAPI.daily()
     const res = response.data
+    // Tenta obter dados de res.data, caso contrário usa res diretamente
     newsList.value = res.data ?? res ?? []
   } catch (err) {
+    console.error('Erro ao carregar notícias do dia:', err)
     newsList.value = []
   } finally {
     loading.value = false
   }
 }
 
+/**
+ * Redireciona para a página de detalhes da notícia
+ * 
+ * @param {string} slug - Slug da notícia
+ */
 const openNews = (slug) => {
   router.push(`/noticia/${slug}`)
 }
 
+/**
+ * Formata a data para exibição em formato brasileiro
+ * 
+ * @param {string} d - Data em formato ISO string
+ * @returns {string} Data formatada (ex: "26/01/2026")
+ */
 const formatDate = (d) => {
   if (!d) return ''
   const date = new Date(d)
   return date.toLocaleDateString('pt-BR')
 }
 
+/**
+ * Extrai um resumo do conteúdo HTML
+ * Remove tags HTML e limita o tamanho do texto
+ * 
+ * @param {string} content - Conteúdo HTML da notícia
+ * @param {number} max - Tamanho máximo do resumo (padrão: 150 caracteres)
+ * @returns {string} Resumo do conteúdo
+ */
 const getExcerpt = (content, max = 150) => {
   if (!content) return ''
-  const text = content.replace(/<[^>]*>/g, '')
+  const text = content.replace(/<[^>]*>/g, '') // Remove todas as tags HTML
   return text.length <= max ? text : text.slice(0, max) + '...'
 }
 
+// Carrega notícias ao montar o componente
 onMounted(() => fetchNews())
 </script>

@@ -157,6 +157,25 @@
   </div>
 </template>
 
+/**
+ * View Login - Página de login do portal
+ * 
+ * Esta view permite que usuários autenticados façam login no sistema.
+ * 
+ * Funcionalidades:
+ * - Validação de formato de email
+ * - Toggle para mostrar/ocultar senha
+ * - Armazenamento de token e dados do usuário no localStorage
+ * - Redirecionamento automático para o painel após login bem-sucedido
+ * - Tratamento de erros de autenticação
+ * 
+ * Estados:
+ * - loading: Controla o estado de carregamento durante o login
+ * - error: Mensagem de erro exibida ao usuário
+ * - showPassword: Controla a visibilidade da senha
+ * - emailError: Mensagem de erro específica para o campo de email
+ */
+
 <script setup>
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
@@ -164,34 +183,49 @@ import api from "@/services/api"
 
 const router = useRouter()
 
-const loading = ref(false)
-const error = ref(null)
-const showPassword = ref(false)
-const emailError = ref(null)
+// Estado do componente
+const loading = ref(false) // Controla o estado de carregamento
+const error = ref(null) // Mensagem de erro geral
+const showPassword = ref(false) // Controla visibilidade da senha
+const emailError = ref(null) // Mensagem de erro do campo email
 
+// Dados do formulário
 const form = reactive({
   email: "",
   password: ""
 })
 
-// Função para validar formato de email
+/**
+ * Valida o formato de email usando regex
+ * 
+ * @param {string} email - Email a ser validado
+ * @returns {boolean} True se o email for válido
+ */
 const validateEmail = (email) => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   return emailRegex.test(email)
 }
 
+/**
+ * Processa o login do usuário
+ * 
+ * Valida os dados do formulário e faz a requisição de autenticação.
+ * Em caso de sucesso, armazena o token e dados do usuário no localStorage
+ * e redireciona para o painel.
+ */
 const handleLogin = async () => {
   loading.value = true
   error.value = null
   emailError.value = null
 
-  // Validação de email
+  // Validação de email obrigatório
   if (!form.email) {
     error.value = "Por favor, informe seu e-mail."
     loading.value = false
     return
   }
 
+  // Validação de formato de email
   if (!validateEmail(form.email)) {
     emailError.value = "Por favor, informe um e-mail válido (ex: nome@exemplo.com)"
     loading.value = false
@@ -201,18 +235,22 @@ const handleLogin = async () => {
   try {
     const response = await api.post("/login", form)
     
-    // Armazena o token e dados do usuário
+    // Armazena o token de autenticação no localStorage
     localStorage.setItem("token", response.data.token)
+    
+    // Armazena os dados do usuário no localStorage
     localStorage.setItem("user", JSON.stringify(response.data.user))
     
     // Redireciona para o painel de redação
     router.push("/painel")
   } catch (err) {
+    // Tratamento de erros específicos
     if (err.response?.status === 401) {
-       error.value = "Credenciais incorretas. Verifique seu e-mail e senha."
+      error.value = "Credenciais incorretas. Verifique seu e-mail e senha."
     } else {
-       error.value = err.response?.data?.message || "Ocorreu um erro ao conectar com o servidor."
+      error.value = err.response?.data?.message || "Ocorreu um erro ao conectar com o servidor."
     }
+    console.error('Erro no login:', err)
   } finally {
     loading.value = false
   }

@@ -180,20 +180,41 @@
   </div>
 </template>
 
+/**
+ * View GerenciarUsuariosView - Gerenciamento de usuários (apenas Admin)
+ * 
+ * Esta view permite que Administradores gerenciem todos os usuários do sistema.
+ * 
+ * Funcionalidades:
+ * - Lista paginada de todos os usuários
+ * - Criação de novos usuários
+ * - Edição de usuários existentes
+ * - Exclusão de usuários (exceto o próprio)
+ * - Capitalização automática de nomes
+ * - Atribuição de papéis (Jornalista, Editor, Admin)
+ * 
+ * Permissões:
+ * - Apenas Administradores podem acessar
+ * - Admin não pode excluir a si mesmo
+ * - Senha é opcional na edição (mantém a atual se não informada)
+ */
+
 <script setup>
 import { ref, onMounted } from 'vue'
 import { userAPI } from '@/services/api'
 
-const loading = ref(false)
-const error = ref(null)
-const users = ref({ data: [], current_page: 1, last_page: 1 })
-const showCreateModal = ref(false)
-const showEditModal = ref(false)
-const showDeleteModal = ref(false)
-const userToDelete = ref(null)
-const formError = ref(null)
-const currentUserId = ref(JSON.parse(localStorage.getItem('user'))?.id)
+// Estado do componente
+const loading = ref(false) // Estado de carregamento
+const error = ref(null) // Mensagem de erro geral
+const users = ref({ data: [], current_page: 1, last_page: 1 }) // Dados paginados dos usuários
+const showCreateModal = ref(false) // Controla exibição do modal de criação
+const showEditModal = ref(false) // Controla exibição do modal de edição
+const showDeleteModal = ref(false) // Controla exibição do modal de confirmação de exclusão
+const userToDelete = ref(null) // Usuário que será excluído
+const formError = ref(null) // Mensagem de erro do formulário
+const currentUserId = ref(JSON.parse(localStorage.getItem('user'))?.id) // ID do usuário atual
 
+// Dados do formulário
 const formData = ref({
   name: '',
   email: '',
@@ -201,8 +222,14 @@ const formData = ref({
   role: 'jornalista'
 })
 
-const editingUserId = ref(null)
+const editingUserId = ref(null) // ID do usuário sendo editado
 
+/**
+ * Capitaliza automaticamente o nome enquanto o usuário digita
+ * Converte primeira letra de cada palavra para maiúscula
+ * 
+ * @param {Event} event - Evento de input do campo nome
+ */
 const capitalizeName = (event) => {
   const words = event.target.value.split(' ')
   const capitalizedWords = words.map(word => {
@@ -214,6 +241,11 @@ const capitalizeName = (event) => {
   formData.value.name = capitalizedWords.join(' ')
 }
 
+/**
+ * Carrega a lista de usuários da API com paginação
+ * 
+ * @param {number} page - Número da página (padrão: 1)
+ */
 const loadUsers = async (page = 1) => {
   loading.value = true
   error.value = null
@@ -222,63 +254,92 @@ const loadUsers = async (page = 1) => {
     users.value = response.data
   } catch (err) {
     error.value = 'Erro ao carregar usuários: ' + (err.response?.data?.message || err.message)
+    console.error('Erro ao carregar usuários:', err)
   } finally {
     loading.value = false
   }
 }
 
+/**
+ * Cria um novo usuário
+ */
 const createUser = async () => {
   formError.value = null
   try {
     await userAPI.create(formData.value)
     closeModals()
-    loadUsers()
+    loadUsers() // Recarrega a lista
   } catch (err) {
     formError.value = err.response?.data?.message || 'Erro ao criar usuário'
+    console.error('Erro ao criar usuário:', err)
   }
 }
 
+/**
+ * Prepara o formulário para edição de um usuário
+ * 
+ * @param {Object} user - Objeto do usuário a ser editado
+ */
 const editUser = (user) => {
   editingUserId.value = user.id
   formData.value = {
     name: user.name,
     email: user.email,
-    password: '',
+    password: '', // Senha vazia (opcional na edição)
     role: user.role
   }
   showEditModal.value = true
 }
 
+/**
+ * Atualiza um usuário existente
+ * Se a senha não for informada, mantém a atual
+ */
 const updateUser = async () => {
   formError.value = null
   try {
     const data = { ...formData.value }
+    // Remove senha se não foi informada (mantém a atual)
     if (!data.password) {
       delete data.password
     }
     await userAPI.update(editingUserId.value, data)
     closeModals()
-    loadUsers()
+    loadUsers() // Recarrega a lista
   } catch (err) {
     formError.value = err.response?.data?.message || 'Erro ao atualizar usuário'
+    console.error('Erro ao atualizar usuário:', err)
   }
 }
 
+/**
+ * Abre o modal de confirmação de exclusão
+ * 
+ * @param {Object} user - Objeto do usuário a ser excluído
+ */
 const confirmDelete = (user) => {
   userToDelete.value = user
   showDeleteModal.value = true
 }
 
+/**
+ * Exclui um usuário após confirmação
+ * Não permite excluir o próprio usuário
+ */
 const deleteUser = async () => {
   try {
     await userAPI.delete(userToDelete.value.id)
     showDeleteModal.value = false
-    loadUsers()
+    loadUsers() // Recarrega a lista
   } catch (err) {
     error.value = 'Erro ao excluir usuário: ' + (err.response?.data?.message || err.message)
+    console.error('Erro ao excluir usuário:', err)
   }
 }
 
+/**
+ * Fecha todos os modais e limpa o formulário
+ */
 const closeModals = () => {
   showCreateModal.value = false
   showEditModal.value = false
@@ -292,6 +353,12 @@ const closeModals = () => {
   formError.value = null
 }
 
+/**
+ * Retorna o label legível do papel do usuário
+ * 
+ * @param {string} role - Papel do usuário
+ * @returns {string} Label do papel
+ */
 const getRoleLabel = (role) => {
   const labels = {
     admin: 'Administrador',
@@ -301,6 +368,12 @@ const getRoleLabel = (role) => {
   return labels[role] || role
 }
 
+/**
+ * Retorna as classes CSS para o badge do papel
+ * 
+ * @param {string} role - Papel do usuário
+ * @returns {string} Classes CSS do Tailwind
+ */
 const getRoleBadgeClass = (role) => {
   const classes = {
     admin: 'bg-purple-100 text-purple-800',
@@ -310,10 +383,18 @@ const getRoleBadgeClass = (role) => {
   return classes[role] || 'bg-gray-100 text-gray-800'
 }
 
+/**
+ * Formata a data para exibição em formato brasileiro
+ * 
+ * @param {string|Date} date - Data a ser formatada
+ * @returns {string} Data formatada
+ */
 const formatDate = (date) => {
+  if (!date) return ''
   return new Date(date).toLocaleDateString('pt-BR')
 }
 
+// Carrega usuários ao montar o componente
 onMounted(() => {
   loadUsers()
 })

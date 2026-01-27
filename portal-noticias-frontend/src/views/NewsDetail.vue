@@ -86,6 +86,21 @@
   </div>
 </template>
 
+/**
+ * View NewsDetail - Página de detalhes de uma notícia
+ * 
+ * Esta view exibe o conteúdo completo de uma notícia, incluindo:
+ * - Título e categoria
+ * - Informações do autor e data de publicação
+ * - Imagem principal (se houver)
+ * - Conteúdo completo em HTML
+ * 
+ * Estados:
+ * - loading: Exibe mensagem de carregamento
+ * - error: Exibe mensagem de erro se a notícia não for encontrada
+ * - news: Exibe o conteúdo da notícia quando carregada
+ */
+
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -94,10 +109,16 @@ import Header from '../components/Header.vue'
 
 const route = useRoute()
 const router = useRouter()
-const news = ref(null)
-const loading = ref(true)
-const error = ref(null)
 
+// Estado do componente
+const news = ref(null) // Dados da notícia carregada
+const loading = ref(true) // Estado de carregamento
+const error = ref(null) // Mensagem de erro (se houver)
+
+/**
+ * Busca os detalhes da notícia pelo slug na URL
+ * Trata erros 404 (notícia não encontrada) e outros erros
+ */
 const fetchNews = async () => {
   loading.value = true
   error.value = null
@@ -106,6 +127,7 @@ const fetchNews = async () => {
     const slug = route.params.slug
     const response = await api.get(`/news/${slug}`)
     const res = response.data
+    // Tenta obter dados de res.data, caso contrário usa res diretamente
     news.value = res.data ?? res
   } catch (err) {
     if (err.response?.status === 404) {
@@ -113,11 +135,19 @@ const fetchNews = async () => {
     } else {
       error.value = 'Erro ao carregar a notícia. Tente novamente mais tarde.'
     }
+    console.error('Erro ao carregar notícia:', err)
   } finally {
     loading.value = false
   }
 }
 
+/**
+ * Formata a data para exibição completa em português
+ * Exemplo: "26 de janeiro de 2026"
+ * 
+ * @param {string} dateString - Data em formato ISO string
+ * @returns {string} Data formatada
+ */
 const formatDate = (dateString) => {
   if (!dateString) return ''
   const date = new Date(dateString)
@@ -128,6 +158,13 @@ const formatDate = (dateString) => {
   })
 }
 
+/**
+ * Formata o horário para exibição
+ * Exemplo: "14:30"
+ * 
+ * @param {string} dateString - Data em formato ISO string
+ * @returns {string} Horário formatado
+ */
 const formatTime = (dateString) => {
   if (!dateString) return ''
   const date = new Date(dateString)
@@ -137,6 +174,7 @@ const formatTime = (dateString) => {
   })
 }
 
+// Carrega a notícia ao montar o componente
 onMounted(() => {
   fetchNews()
 })

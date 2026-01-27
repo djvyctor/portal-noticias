@@ -138,6 +138,24 @@
   </div>
 </template>
 
+/**
+ * View ChangePasswordView - Formulário para alterar senha do usuário
+ * 
+ * Esta view permite que usuários autenticados alterem sua própria senha.
+ * 
+ * Funcionalidades:
+ * - Validação de senha atual
+ * - Validação de nova senha (mínimo 8 caracteres)
+ * - Confirmação de nova senha
+ * - Toggle para mostrar/ocultar senhas
+ * - Feedback visual de sucesso/erro
+ * 
+ * Validações:
+ * - Senha atual obrigatória
+ * - Nova senha deve ter no mínimo 8 caracteres
+ * - Confirmação deve coincidir com nova senha
+ */
+
 <script setup>
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
@@ -145,29 +163,39 @@ import api from '../../services/api'
 
 const router = useRouter()
 
-const loading = ref(false)
-const error = ref(null)
-const success = ref(null)
-const showPassword = ref(false)
-const showCurrentPassword = ref(false)
+// Estado do componente
+const loading = ref(false) // Estado de carregamento
+const error = ref(null) // Mensagem de erro
+const success = ref(null) // Mensagem de sucesso
+const showPassword = ref(false) // Controla visibilidade da nova senha
+const showCurrentPassword = ref(false) // Controla visibilidade da senha atual
 
+// Dados do formulário
 const form = reactive({
   current_password: '',
   password: '',
   password_confirmation: ''
 })
 
+/**
+ * Processa a alteração de senha
+ * 
+ * Valida os dados do formulário e faz a requisição para alterar a senha.
+ * Em caso de sucesso, limpa o formulário e redireciona para o painel.
+ */
 const handleChangePassword = async () => {
   loading.value = true
   error.value = null
   success.value = null
 
+  // Validação: senhas devem coincidir
   if (form.password !== form.password_confirmation) {
     error.value = "As senhas não coincidem."
     loading.value = false
     return
   }
 
+  // Validação: senha deve ter no mínimo 8 caracteres
   if (form.password.length < 8) {
     error.value = "A senha deve ter no mínimo 8 caracteres."
     loading.value = false
@@ -183,16 +211,17 @@ const handleChangePassword = async () => {
     
     success.value = "Senha alterada com sucesso!"
     
-    // Limpa o formulário
+    // Limpa o formulário após sucesso
     form.current_password = ''
     form.password = ''
     form.password_confirmation = ''
     
-    // Redireciona após 2 segundos
+    // Redireciona para o painel após 2 segundos (permite visualizar mensagem de sucesso)
     setTimeout(() => {
       router.push("/painel")
     }, 2000)
   } catch (err) {
+    // Tratamento de erros específicos
     if (err.response?.status === 400) {
       error.value = err.response.data.message || "Senha atual incorreta."
     } else if (err.response?.status === 422) {
@@ -200,6 +229,7 @@ const handleChangePassword = async () => {
     } else {
       error.value = err.response?.data?.message || "Ocorreu um erro ao alterar a senha."
     }
+    console.error('Erro ao alterar senha:', err)
   } finally {
     loading.value = false
   }

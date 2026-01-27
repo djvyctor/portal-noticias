@@ -146,35 +146,70 @@
   </div>
 </template>
 
+/**
+ * View TodasNoticiasView - Moderação de todas as notícias
+ * 
+ * Esta view permite que Editores e Admins visualizem e gerenciem todas as notícias do sistema.
+ * 
+ * Funcionalidades:
+ * - Lista todas as notícias do sistema (de todos os usuários)
+ * - Filtros por status (Todas, Pendentes, Publicadas)
+ * - Aprovação de notícias pendentes (Editor/Admin)
+ * - Destaque de notícias no carrossel (apenas Admin)
+ * - Edição de qualquer notícia
+ * 
+ * Permissões:
+ * - Apenas Editor e Admin podem acessar
+ * - Editor pode aprovar e editar notícias
+ * - Admin pode aprovar, editar e destacar notícias
+ */
+
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import api, { newsAPI } from '@/services/api'
 
 const router = useRouter()
-const allNews = ref([])
-const loading = ref(false)
-const filterStatus = ref('pending')
-const currentUser = ref(null)
 
+// Estado do componente
+const allNews = ref([]) // Lista de todas as notícias
+const loading = ref(false) // Estado de carregamento
+const filterStatus = ref('pending') // Filtro atual (all, pending, published)
+const currentUser = ref(null) // Usuário atual
+
+// Computed properties para verificar permissões
 const isEditor = computed(() => currentUser.value?.role === 'editor')
 const isAdmin = computed(() => currentUser.value?.role === 'admin')
 
+// Computed properties para contadores
 const pendingCount = computed(() => allNews.value.filter(n => n.status === 'pending').length)
 const publishedCount = computed(() => allNews.value.filter(n => n.status === 'published').length)
 
+/**
+ * Filtra as notícias baseado no status selecionado
+ */
 const filteredNews = computed(() => {
   if (filterStatus.value === 'all') return allNews.value
   return allNews.value.filter(n => n.status === filterStatus.value)
 })
 
+/**
+ * Carrega os dados do usuário atual do localStorage
+ */
 const loadCurrentUser = () => {
   const user = localStorage.getItem('user')
   if (user) {
-    currentUser.value = JSON.parse(user)
+    try {
+      currentUser.value = JSON.parse(user)
+    } catch (error) {
+      console.error('Erro ao parsear dados do usuário:', error)
+    }
   }
 }
 
+/**
+ * Carrega todas as notícias do sistema da API
+ */
 const loadAllNews = async () => {
   loading.value = true
   try {
@@ -182,41 +217,66 @@ const loadAllNews = async () => {
     const res = response.data
     allNews.value = res.data ?? res ?? []
   } catch (error) {
+    console.error('Erro ao carregar notícias:', error)
     allNews.value = []
   } finally {
     loading.value = false
   }
 }
 
+/**
+ * Aprova e publica uma notícia pendente
+ * 
+ * @param {number} id - ID da notícia
+ */
 const approveNews = async (id) => {
   if (!confirm('Deseja aprovar e publicar esta notícia?')) return
   
   try {
     await newsAPI.approve(id)
-    await loadAllNews()
+    await loadAllNews() // Recarrega a lista
     alert('Notícia aprovada e publicada com sucesso! Ela já está visível no site público.')
   } catch (error) {
     alert('Erro ao aprovar notícia: ' + (error.response?.data?.message || error.message))
+    console.error('Erro ao aprovar notícia:', error)
   }
 }
 
+/**
+ * Alterna o destaque de uma notícia no carrossel (apenas Admin)
+ * 
+ * @param {number} id - ID da notícia
+ * @param {boolean} currentStatus - Status atual do destaque
+ */
 const toggleFeature = async (id, currentStatus) => {
   const action = currentStatus ? 'remover dos destaques' : 'destacar no carrossel'
   if (!confirm(`Deseja ${action} esta notícia?`)) return
   
   try {
     await newsAPI.feature(id)
-    await loadAllNews()
+    await loadAllNews() // Recarrega a lista
     alert(`Notícia ${currentStatus ? 'removida dos destaques' : 'destacada no carrossel'} com sucesso!`)
   } catch (error) {
     alert('Erro ao destacar notícia: ' + (error.response?.data?.message || error.message))
+    console.error('Erro ao destacar notícia:', error)
   }
 }
 
+/**
+ * Redireciona para a página de edição da notícia
+ * 
+ * @param {number} id - ID da notícia
+ */
 const editNews = (id) => {
   router.push(`/painel/noticias/editar/${id}`)
 }
 
+/**
+ * Retorna o label legível do status da notícia
+ * 
+ * @param {string} status - Status da notícia
+ * @returns {string} Label do status
+ */
 const getStatusLabel = (status) => {
   const labels = {
     pending: 'Pendente',
@@ -227,6 +287,12 @@ const getStatusLabel = (status) => {
   return labels[status] || status
 }
 
+/**
+ * Retorna as classes CSS para o badge de status
+ * 
+ * @param {string} status - Status da notícia
+ * @returns {string} Classes CSS do Tailwind
+ */
 const getStatusBadgeClass = (status) => {
   const classes = {
     pending: 'bg-orange-100 text-orange-700',
@@ -237,23 +303,37 @@ const getStatusBadgeClass = (status) => {
   return classes[status] || 'bg-gray-100 text-gray-700'
 }
 
+/**
+ * Formata a data para exibição em formato brasileiro
+ * 
+ * @param {string} dateString - Data em formato ISO string
+ * @returns {string} Data formatada
+ */
 const formatDate = (dateString) => {
   if (!dateString) return ''
   const date = new Date(dateString)
   return date.toLocaleDateString('pt-BR')
 }
 
+/**
+ * Extrai um resumo do conteúdo HTML
+ * 
+ * @param {string} content - Conteúdo HTML da notícia
+ * @param {number} maxLength - Tamanho máximo do resumo (padrão: 150 caracteres)
+ * @returns {string} Resumo do conteúdo
+ */
 const getExcerpt = (content, maxLength = 150) => {
   if (!content) return ''
-  const text = content.replace(/<[^>]*>/g, '')
+  const text = content.replace(/<[^>]*>/g, '') // Remove todas as tags HTML
   if (text.length <= maxLength) return text
   return text.substring(0, maxLength) + '...'
 }
 
+// Carrega dados ao montar o componente
 onMounted(() => {
   loadCurrentUser()
   
-  // Verificar permissão
+  // Verifica permissão - apenas Editor e Admin podem acessar
   if (!isEditor.value && !isAdmin.value) {
     alert('Você não tem permissão para acessar esta página')
     router.push('/painel')

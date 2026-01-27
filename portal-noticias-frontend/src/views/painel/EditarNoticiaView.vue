@@ -164,6 +164,24 @@
   </div>
 </template>
 
+/**
+ * View EditarNoticiaView - Formulário para editar notícia existente
+ * 
+ * Esta view permite que usuários editem suas próprias notícias.
+ * 
+ * Funcionalidades:
+ * - Carrega dados da notícia existente
+ * - Formulário pré-preenchido para edição
+ * - Preview da imagem atual ou nova imagem selecionada
+ * - Controle de status e destaque (apenas Editor/Admin)
+ * - Tratamento especial para notícias rejeitadas
+ * 
+ * Permissões:
+ * - Jornalista: Pode editar apenas título, conteúdo, categoria e imagem
+ * - Editor/Admin: Podem alterar status e destacar notícias
+ * - Notícias rejeitadas: Ao salvar, voltam para "pending" automaticamente
+ */
+
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -171,20 +189,27 @@ import api from '@/services/api'
 
 const route = useRoute()
 const router = useRouter()
-const news = ref(null)
-const categories = ref([])
-const loading = ref(true)
-const saving = ref(false)
-const error = ref(null)
-const imagePreview = ref(null)
-const imageFile = ref(null)
-const currentUser = ref(null)
 
+// Estado do componente
+const news = ref(null) // Dados da notícia sendo editada
+const categories = ref([]) // Lista de categorias
+const loading = ref(true) // Estado de carregamento
+const saving = ref(false) // Estado de salvamento
+const error = ref(null) // Mensagem de erro
+const imagePreview = ref(null) // Preview da imagem (atual ou nova)
+const imageFile = ref(null) // Arquivo de imagem novo (se houver)
+const currentUser = ref(null) // Usuário atual
+
+/**
+ * Verifica se o usuário pode gerenciar destaque e status
+ * Apenas Editor e Admin têm essa permissão
+ */
 const canManageFeature = computed(() => {
   const r = currentUser.value?.role
   return r === 'editor' || r === 'admin'
 })
 
+// Dados do formulário
 const form = reactive({
   title: '',
   content: '',
@@ -193,6 +218,10 @@ const form = reactive({
   is_featured: false
 })
 
+/**
+ * Carrega os dados da notícia da API
+ * Preenche o formulário com os dados existentes
+ */
 const loadNews = async () => {
   loading.value = true
   error.value = null
@@ -202,11 +231,14 @@ const loadNews = async () => {
     news.value = res.data ?? res
     if (!news.value) throw new Error('Notícia não encontrada')
 
+    // Preenche o formulário com os dados da notícia
     form.title = news.value.title || ''
     form.content = news.value.content || ''
     form.category_id = news.value.category_id || ''
     form.status = news.value.status || 'pending'
     form.is_featured = !!news.value.is_featured
+    
+    // Carrega preview da imagem atual se existir
     if (news.value.image_path) {
       imagePreview.value = `http://portal-noticias-backend.test/storage/${news.value.image_path}`
     }
@@ -218,19 +250,29 @@ const loadNews = async () => {
   }
 }
 
+/**
+ * Carrega as categorias disponíveis da API
+ */
 const loadCategories = async () => {
   try {
     const response = await api.get('/categories')
     categories.value = response.data || []
   } catch (err) {
+    console.error('Erro ao carregar categorias:', err)
     categories.value = []
   }
 }
 
+/**
+ * Processa a seleção de nova imagem e cria preview
+ * 
+ * @param {Event} event - Evento de mudança do input de arquivo
+ */
 const handleImageChange = (event) => {
   const file = event.target.files[0]
   if (file) {
     imageFile.value = file
+    // Cria preview da nova imagem
     const reader = new FileReader()
     reader.onload = (e) => {
       imagePreview.value = e.target.result
@@ -239,11 +281,19 @@ const handleImageChange = (event) => {
   }
 }
 
+/**
+ * Remove a imagem (limpa preview e arquivo)
+ */
 const removeImage = () => {
   imagePreview.value = null
   imageFile.value = null
 }
 
+/**
+ * Processa o envio do formulário de edição
+ * Usa FormData para suportar upload de imagem
+ * Apenas Editor/Admin podem alterar status e destaque
+ */
 const handleSubmit = async () => {
   saving.value = true
   error.value = null
@@ -253,12 +303,15 @@ const handleSubmit = async () => {
     formData.append('title', form.title)
     formData.append('content', form.content)
     formData.append('category_id', form.category_id)
-    formData.append('_method', 'PUT')
+    formData.append('_method', 'PUT') // Laravel requer _method para PUT via POST
+    
+    // Apenas Editor/Admin podem alterar status e destaque
     if (canManageFeature.value) {
       formData.append('status', form.status)
       formData.append('is_featured', form.is_featured ? '1' : '0')
     }
 
+    // Adiciona nova imagem se houver
     if (imageFile.value) {
       formData.append('image', imageFile.value)
     }
@@ -269,17 +322,28 @@ const handleSubmit = async () => {
       }
     })
 
+    // Redireciona para a lista de notícias após sucesso
     router.push('/painel/noticias')
   } catch (err) {
     error.value = err.response?.data?.message || 'Erro ao atualizar notícia'
+    console.error('Erro ao atualizar notícia:', err)
   } finally {
     saving.value = false
   }
 }
 
+// Carrega dados ao montar o componente
 onMounted(() => {
+  // Carrega dados do usuário do localStorage
   const u = localStorage.getItem('user')
-  if (u) currentUser.value = JSON.parse(u)
+  if (u) {
+    try {
+      currentUser.value = JSON.parse(u)
+    } catch (error) {
+      console.error('Erro ao parsear dados do usuário:', error)
+    }
+  }
+  
   loadNews()
   loadCategories()
 })

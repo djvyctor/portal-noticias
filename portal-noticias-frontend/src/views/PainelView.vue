@@ -265,43 +265,74 @@
   </div>
 </template>
 
+/**
+ * View PainelView - Página principal do painel de redação
+ * 
+ * Esta é a página inicial do painel administrativo, exibida após o login.
+ * 
+ * Funcionalidades:
+ * - Dashboard com estatísticas do usuário (total de notícias, publicadas, rascunhos)
+ * - Ações rápidas com links para funcionalidades principais
+ * - Lista das últimas notícias do usuário
+ * - Alerta de notícias pendentes (para Editor/Admin)
+ * - Informações do usuário e opção de logout
+ * 
+ * Permissões:
+ * - Todos os usuários autenticados podem acessar
+ * - Editor/Admin veem opções adicionais de moderação
+ * - Admin vê opção de gerenciar usuários
+ */
+
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../services/api'
 
 const router = useRouter()
-const user = ref(null)
-const stats = ref({
-  myNews: 0,
-  published: 0,
-  drafts: 0
-})
-const recentNews = ref([])
-const loadingNews = ref(false)
 
+// Estado do componente
+const user = ref(null) // Dados do usuário logado
+const stats = ref({
+  myNews: 0, // Total de notícias do usuário
+  published: 0, // Notícias publicadas
+  drafts: 0 // Notícias pendentes (rascunhos)
+})
+const recentNews = ref([]) // Últimas 5 notícias do usuário
+const loadingNews = ref(false) // Estado de carregamento das notícias
+const pendingCount = ref(0) // Contador de notícias pendentes (Editor/Admin)
+
+/**
+ * Carrega os dados atualizados do usuário da API
+ * Atualiza o localStorage com os dados mais recentes
+ * Redireciona para login se houver erro de autenticação
+ */
 const loadUserData = async () => {
   try {
     const response = await api.get('/user')
     user.value = response.data
     localStorage.setItem('user', JSON.stringify(response.data))
   } catch (error) {
+    // Erro de autenticação - redireciona para login
     router.push('/login')
   }
 }
 
-const pendingCount = ref(0)
-
+/**
+ * Carrega estatísticas das notícias do usuário
+ * Calcula total, publicadas e pendentes
+ * Se for Editor ou Admin, também conta notícias pendentes de todos os usuários
+ */
 const loadStats = async () => {
   try {
     const response = await api.get('/user/news')
     const news = response.data.data || response.data || []
     
+    // Calcula estatísticas das notícias do usuário
     stats.value.myNews = news.length
     stats.value.published = news.filter(n => n.status === 'published').length
     stats.value.drafts = news.filter(n => n.status === 'pending').length
     
-    // Se for Editor ou Admin, carrega notícias pendentes de TODOS
+    // Se for Editor ou Admin, carrega notícias pendentes de TODOS os usuários
     if (user.value?.role === 'editor' || user.value?.role === 'admin') {
       try {
         const allNewsResponse = await api.get('/news/all')
@@ -312,35 +343,53 @@ const loadStats = async () => {
       }
     }
   } catch (error) {
-    // Erro silencioso - estatísticas não críticas
+    // Erro silencioso - estatísticas não são críticas para o funcionamento
+    console.error('Erro ao carregar estatísticas:', error)
   }
 }
 
+/**
+ * Carrega as últimas 5 notícias do usuário
+ * Exibidas na seção "Minhas Últimas Notícias"
+ */
 const loadRecentNews = async () => {
   loadingNews.value = true
   try {
     const response = await api.get('/user/news')
     const news = response.data.data || response.data || []
-    recentNews.value = news.slice(0, 5)
+    recentNews.value = news.slice(0, 5) // Pega apenas as 5 primeiras
   } catch (error) {
-    // Erro silencioso
+    console.error('Erro ao carregar notícias recentes:', error)
   } finally {
     loadingNews.value = false
   }
 }
 
+/**
+ * Processa o logout do usuário
+ * Limpa token e dados do usuário do localStorage
+ * Redireciona para a página de login
+ */
 const handleLogout = async () => {
   try {
     await api.post('/logout')
   } catch (error) {
-    // Continua mesmo se houver erro no logout
+    // Continua mesmo se houver erro no logout (pode ser token expirado)
+    console.error('Erro no logout:', error)
   } finally {
+    // Sempre limpa os dados locais e redireciona
     localStorage.removeItem('token')
     localStorage.removeItem('user')
     router.push('/login')
   }
 }
 
+/**
+ * Retorna o nome legível do papel do usuário
+ * 
+ * @param {string} role - Papel do usuário (admin, editor, jornalista)
+ * @returns {string} Nome legível do papel
+ */
 const getRoleName = (role) => {
   const roles = {
     admin: 'Administrador',
@@ -350,6 +399,12 @@ const getRoleName = (role) => {
   return roles[role] || role
 }
 
+/**
+ * Retorna a descrição do papel do usuário
+ * 
+ * @param {string} role - Papel do usuário
+ * @returns {string} Descrição das permissões do papel
+ */
 const getRoleDescription = (role) => {
   const descriptions = {
     admin: 'Você tem acesso total ao sistema. Pode criar, editar, publicar e destacar qualquer notícia.',
@@ -359,12 +414,24 @@ const getRoleDescription = (role) => {
   return descriptions[role] || 'Bem-vindo ao painel de redação!'
 }
 
+/**
+ * Formata a data para exibição em formato brasileiro
+ * 
+ * @param {string} dateString - Data em formato ISO string
+ * @returns {string} Data formatada (ex: "26/01/2026")
+ */
 const formatDate = (dateString) => {
   if (!dateString) return ''
   const date = new Date(dateString)
   return date.toLocaleDateString('pt-BR')
 }
 
+/**
+ * Retorna o label legível do status da notícia
+ * 
+ * @param {string} status - Status da notícia
+ * @returns {string} Label do status
+ */
 const getStatusLabel = (status) => {
   const labels = {
     draft: 'Rascunho',
@@ -374,6 +441,12 @@ const getStatusLabel = (status) => {
   return labels[status] || status
 }
 
+/**
+ * Retorna as classes CSS para o badge de status
+ * 
+ * @param {string} status - Status da notícia
+ * @returns {string} Classes CSS do Tailwind
+ */
 const getStatusBadgeClass = (status) => {
   const classes = {
     draft: 'bg-gray-100 text-gray-700',
@@ -383,18 +456,26 @@ const getStatusBadgeClass = (status) => {
   return classes[status] || 'bg-gray-100 text-gray-700'
 }
 
+// Carrega dados ao montar o componente
 onMounted(() => {
+  // Verifica se há token de autenticação
   const token = localStorage.getItem('token')
   if (!token) {
     router.push('/login')
     return
   }
   
+  // Carrega dados do usuário do localStorage (para exibição imediata)
   const storedUser = localStorage.getItem('user')
   if (storedUser) {
-    user.value = JSON.parse(storedUser)
+    try {
+      user.value = JSON.parse(storedUser)
+    } catch (error) {
+      console.error('Erro ao parsear dados do usuário:', error)
+    }
   }
   
+  // Carrega dados atualizados da API
   loadUserData()
   loadStats()
   loadRecentNews()

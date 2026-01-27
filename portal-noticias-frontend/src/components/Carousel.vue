@@ -115,41 +115,70 @@ import { useRouter } from 'vue-router'
 import api from '../services/api'
 
 const router = useRouter()
-const currentIndex = ref(0)
-let timer = null
-const highlights = ref([])
-const loading = ref(true)
 
+// Estado do componente
+const currentIndex = ref(0) // Índice da notícia atual exibida no carrossel
+let timer = null // Referência ao timer do auto-play
+const highlights = ref([]) // Lista de notícias em destaque
+const loading = ref(true) // Estado de carregamento
+
+/**
+ * Busca notícias em destaque da API para o carrossel
+ * Inicia o auto-play se houver notícias disponíveis
+ */
 const fetchFeaturedNews = async () => {
   loading.value = true
   try {
     const response = await api.get('/news/carousel')
     const res = response.data
+    // Tenta obter dados de res.data, caso contrário usa res diretamente se for array
     highlights.value = res.data ?? (Array.isArray(res) ? res : [])
-    if (highlights.value.length > 0) startSlide()
+    
+    // Inicia o auto-play se houver mais de uma notícia
+    if (highlights.value.length > 0) {
+      startSlide()
+    }
   } catch (err) {
+    console.error('Erro ao carregar notícias do carrossel:', err)
     highlights.value = []
   } finally {
     loading.value = false
   }
 }
 
+/**
+ * Avança para a próxima notícia no carrossel
+ * Volta para o início quando chega ao final (loop)
+ */
 const next = () => {
   if (highlights.value.length === 0) return
   currentIndex.value = (currentIndex.value + 1) % highlights.value.length
 }
 
+/**
+ * Volta para a notícia anterior no carrossel
+ * Vai para o final quando está no início (loop)
+ */
 const prev = () => {
   if (highlights.value.length === 0) return
   currentIndex.value = (currentIndex.value - 1 + highlights.value.length) % highlights.value.length
 }
 
+/**
+ * Inicia o auto-play do carrossel
+ * Avança automaticamente a cada 5 segundos
+ * Só inicia se houver mais de uma notícia
+ */
 const startSlide = () => {
-  stopSlide()
-  if (highlights.value.length <= 1) return
-  timer = setInterval(next, 5000)
+  stopSlide() // Garante que não há timer duplicado
+  if (highlights.value.length <= 1) return // Não precisa de auto-play se houver apenas uma notícia
+  timer = setInterval(next, 5000) // Avança a cada 5 segundos
 }
 
+/**
+ * Para o auto-play do carrossel
+ * Limpa o timer se existir
+ */
 const stopSlide = () => {
   if (timer) {
     clearInterval(timer)
@@ -157,20 +186,35 @@ const stopSlide = () => {
   }
 }
 
-onMounted(() => {
-  fetchFeaturedNews()
-})
-
-onUnmounted(() => stopSlide())
-
+/**
+ * Extrai um resumo do conteúdo HTML
+ * Remove tags HTML e limita o tamanho do texto
+ * 
+ * @param {string} content - Conteúdo HTML da notícia
+ * @param {number} maxLength - Tamanho máximo do resumo (padrão: 200 caracteres)
+ * @returns {string} Resumo do conteúdo
+ */
 const getExcerpt = (content, maxLength = 200) => {
   if (!content) return ''
-  const text = content.replace(/<[^>]*>/g, '') // Remove HTML tags
+  const text = content.replace(/<[^>]*>/g, '') // Remove todas as tags HTML
   if (text.length <= maxLength) return text
   return text.substring(0, maxLength) + '...'
 }
 
+/**
+ * Redireciona para a página de detalhes da notícia
+ * 
+ * @param {string} slug - Slug da notícia
+ */
 const openNews = (slug) => {
   router.push(`/noticia/${slug}`)
 }
+
+// Carrega notícias ao montar o componente
+onMounted(() => {
+  fetchFeaturedNews()
+})
+
+// Limpa o timer ao desmontar o componente (evita memory leaks)
+onUnmounted(() => stopSlide())
 </script>
