@@ -214,7 +214,7 @@ const routes = [
     path: "/painel/usuarios",
     name: "gerenciar-usuarios",
     component: GerenciarUsuariosView,
-    beforeEnter: requireAdmin // Apenas Admin
+    beforeEnter: requireEditorOrAdmin // Editor e Admin podem acessar
   },
   {
     path: "/painel/alterar-senha",

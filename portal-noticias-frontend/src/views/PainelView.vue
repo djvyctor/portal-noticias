@@ -163,9 +163,9 @@
               Todas as Notícias
             </router-link>
 
-            <!-- Gerenciar Usuários (só para Admin) -->
+            <!-- Gerenciar Usuários (Editor/Admin) -->
             <router-link
-              v-if="user?.role === 'admin'"
+              v-if="user?.role === 'editor' || user?.role === 'admin'"
               to="/painel/usuarios"
               class="flex items-center justify-center px-4 py-3 border border-purple-300 rounded-lg bg-purple-50 hover:bg-purple-100 transition-colors font-semibold text-purple-800"
             >
@@ -281,7 +281,7 @@
  * Permissões:
  * - Todos os usuários autenticados podem acessar
  * - Editor/Admin veem opções adicionais de moderação
- * - Admin vê opção de gerenciar usuários
+ * - Editor/Admin veem opção de gerenciar usuários (Editor só pode criar jornalistas)
  */
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'

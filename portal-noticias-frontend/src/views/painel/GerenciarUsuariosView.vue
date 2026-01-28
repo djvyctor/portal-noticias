@@ -49,7 +49,9 @@
               >
                 Editar
               </button>
+              <!-- Apenas Admin pode excluir usuários -->
               <button
+                v-if="isAdmin"
                 @click="confirmDelete(user)"
                 class="text-red-600 hover:text-red-900"
                 :disabled="user.id === currentUserId"
@@ -109,8 +111,11 @@
                 class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               />
             </div>
-            <div class="mb-4">
-              <label class="block text-gray-700 text-sm font-bold mb-2">Senha {{ showEditModal ? '(deixe em branco para não alterar)' : '' }}</label>
+            <!-- Campo de senha - Editor só pode definir ao criar, não pode alterar senha de outros -->
+            <div v-if="showCreateModal || (showEditModal && (isAdmin || editingUserId === currentUserId))" class="mb-4">
+              <label class="block text-gray-700 text-sm font-bold mb-2">
+                Senha {{ showEditModal ? '(deixe em branco para não alterar)' : '*' }}
+              </label>
               <input
                 v-model="formData.password"
                 type="password"
@@ -119,17 +124,32 @@
                 class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               />
             </div>
+            <!-- Mensagem informativa quando Editor tenta editar outro usuário -->
+            <div v-if="showEditModal && isEditor && !isAdmin && editingUserId !== currentUserId" class="mb-4 bg-blue-50 border border-blue-200 rounded p-3">
+              <p class="text-xs text-blue-700">
+                <strong>Nota:</strong> Editores não podem alterar a senha de outros usuários. Apenas o próprio usuário pode alterar sua senha através da opção "Alterar Senha" no menu.
+              </p>
+            </div>
+            <!-- Campo de função - Editor só pode criar jornalistas, Admin pode criar qualquer tipo -->
             <div class="mb-4">
               <label class="block text-gray-700 text-sm font-bold mb-2">Função</label>
               <select
                 v-model="formData.role"
                 required
-                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                :disabled="showEditModal && isEditor && !isAdmin"
+                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline disabled:bg-gray-100 disabled:cursor-not-allowed"
               >
                 <option value="jornalista">Jornalista</option>
-                <option value="editor">Editor</option>
-                <option value="admin">Administrador</option>
+                <!-- Editor não pode criar editores ou admins -->
+                <option v-if="isAdmin || (!showCreateModal && !isEditor)" value="editor">Editor</option>
+                <option v-if="isAdmin || (!showCreateModal && !isEditor)" value="admin">Administrador</option>
               </select>
+              <p v-if="showCreateModal && isEditor && !isAdmin" class="text-xs text-gray-500 mt-1">
+                Editores só podem criar jornalistas.
+              </p>
+              <p v-if="showEditModal && isEditor && !isAdmin" class="text-xs text-gray-500 mt-1">
+                Editores não podem alterar a função de usuários.
+              </p>
             </div>
             <div v-if="formError" class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
               {{ formError }}
@@ -182,24 +202,27 @@
 
 <script setup>
 /**
- * View GerenciarUsuariosView - Gerenciamento de usuários (apenas Admin)
+ * View GerenciarUsuariosView - Gerenciamento de usuários (Editor/Admin)
  * 
- * Esta view permite que Administradores gerenciem todos os usuários do sistema.
+ * Esta view permite que Editores e Administradores gerenciem usuários do sistema.
  * 
  * Funcionalidades:
  * - Lista paginada de todos os usuários
- * - Criação de novos usuários
- * - Edição de usuários existentes
- * - Exclusão de usuários (exceto o próprio)
+ * - Criação de novos usuários (Editor só pode criar jornalistas)
+ * - Edição de usuários existentes (Editor não pode alterar role)
+ * - Exclusão de usuários (apenas Admin, exceto o próprio)
  * - Capitalização automática de nomes
- * - Atribuição de papéis (Jornalista, Editor, Admin)
+ * - Atribuição de papéis (Editor só pode criar jornalistas, Admin pode criar qualquer tipo)
  * 
  * Permissões:
- * - Apenas Administradores podem acessar
+ * - Editor e Admin podem acessar
+ * - Editor pode criar apenas jornalistas
+ * - Editor não pode alterar role de usuários
+ * - Editor não pode excluir usuários (apenas Admin)
  * - Admin não pode excluir a si mesmo
  * - Senha é opcional na edição (mantém a atual se não informada)
  */
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { userAPI } from '../../services/api'
 import { formatDate } from '../../utils/date'
 import { capitalizeWords } from '../../utils/text'
@@ -214,7 +237,12 @@ const showEditModal = ref(false) // Controla exibição do modal de edição
 const showDeleteModal = ref(false) // Controla exibição do modal de confirmação de exclusão
 const userToDelete = ref(null) // Usuário que será excluído
 const formError = ref(null) // Mensagem de erro do formulário
-const currentUserId = ref(JSON.parse(localStorage.getItem('user'))?.id) // ID do usuário atual
+const currentUser = ref(JSON.parse(localStorage.getItem('user')) || {}) // Usuário atual
+const currentUserId = ref(currentUser.value?.id) // ID do usuário atual
+
+// Verifica se o usuário atual é Admin
+const isAdmin = computed(() => currentUser.value?.role === 'admin')
+const isEditor = computed(() => currentUser.value?.role === 'editor')
 
 // Dados do formulário
 const formData = ref({
