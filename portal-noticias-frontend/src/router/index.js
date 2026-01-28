@@ -31,6 +31,9 @@ import ChangePasswordView from "@/views/painel/ChangePasswordView.vue"
 import GerenciarUsuariosView from "@/views/painel/GerenciarUsuariosView.vue"
 import NoticiasPendentesView from "@/views/painel/NoticiasPendentesView.vue"
 import NoticiasRejeitadasView from "@/views/painel/NoticiasRejeitadasView.vue"
+import SolicitarPromocaoView from "@/views/painel/SolicitarPromocaoView.vue"
+import MinhasSolicitacoesView from "@/views/painel/MinhasSolicitacoesView.vue"
+import SolicitacoesPromocaoView from "@/views/painel/SolicitacoesPromocaoView.vue"
 
 /**
  * Guard de autenticação - verifica se o usuário está logado
@@ -221,6 +224,24 @@ const routes = [
     name: "change-password",
     component: ChangePasswordView,
     beforeEnter: requireAuth
+  },
+  {
+    path: "/painel/solicitar-promocao",
+    name: "solicitar-promocao",
+    component: SolicitarPromocaoView,
+    beforeEnter: requireAuth
+  },
+  {
+    path: "/painel/minhas-solicitacoes",
+    name: "minhas-solicitacoes",
+    component: MinhasSolicitacoesView,
+    beforeEnter: requireAuth
+  },
+  {
+    path: "/painel/solicitacoes-promocao",
+    name: "solicitacoes-promocao",
+    component: SolicitacoesPromocaoView,
+    beforeEnter: requireEditorOrAdmin // Apenas Editor ou Admin
   }
 ]
 

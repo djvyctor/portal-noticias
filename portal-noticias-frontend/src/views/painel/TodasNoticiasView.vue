@@ -78,7 +78,7 @@
                   v-if="news.is_featured"
                   class="px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-700"
                 >
-                  ⭐ Destaque
+                  Destaque
                 </span>
               </div>
               
@@ -113,7 +113,7 @@
                 type="button"
                 class="px-4 py-2 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-lg shadow-sm transition-colors duration-200 cursor-pointer"
               >
-                ✓ Aprovar
+                Aprovar
               </button>
               
               <!-- Destacar no Carrossel (Editor/Admin, só para notícias publicadas) -->
@@ -127,7 +127,7 @@
                 class="px-4 py-2 text-sm font-semibold rounded-lg shadow-sm transition-colors duration-200 cursor-pointer"
                 :title="news.is_featured ? 'Remover do carrossel' : 'Adicionar ao carrossel'"
               >
-                {{ news.is_featured ? '★ No Carrossel' : '☆ Destacar' }}
+                {{ news.is_featured ? 'No Carrossel' : 'Destacar' }}
               </button>
               
               <!-- Editar -->

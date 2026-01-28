@@ -99,7 +99,7 @@
               @click="showViewModal = false"
               class="text-gray-400 hover:text-gray-600 text-2xl"
             >
-              ×
+              X
             </button>
           </div>
           <div class="text-sm text-gray-600 mb-4">

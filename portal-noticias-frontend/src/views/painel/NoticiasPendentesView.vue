@@ -13,7 +13,7 @@
     <template v-else>
       <div v-if="approveError" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6 flex justify-between items-center">
         <span>{{ approveError }}</span>
-        <button type="button" @click="approveError = null" class="text-red-700 hover:text-red-900 font-bold px-2">×</button>
+        <button type="button" @click="approveError = null" class="text-red-700 hover:text-red-900 font-bold px-2">X</button>
       </div>
 
       <div v-if="news.data && news.data.length === 0" class="text-center py-12">
@@ -65,13 +65,13 @@
               @click="approveNews(item.id)"
               class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded transition duration-200"
             >
-              ✓ Aprovar
+              Aprovar
             </button>
             <button
               @click="openRejectModal(item)"
               class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded transition duration-200"
             >
-              ✗ Rejeitar
+              Rejeitar
             </button>
           </div>
         </div>
@@ -148,7 +148,7 @@
               @click="showViewModal = false"
               class="text-gray-400 hover:text-gray-600 text-2xl"
             >
-              ×
+              X
             </button>
           </div>
           <div class="text-sm text-gray-600 mb-4">
@@ -168,13 +168,13 @@
               @click="approveNews(viewingNews.id)"
               class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded transition duration-200"
             >
-              ✓ Aprovar
+              Aprovar
             </button>
             <button
               @click="openRejectModal(viewingNews)"
               class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded transition duration-200"
             >
-              ✗ Rejeitar
+              Rejeitar
             </button>
           </div>
         </div>

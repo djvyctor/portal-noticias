@@ -19,7 +19,7 @@
           <li>Faça login como Admin</li>
           <li>Vá em "Moderação"</li>
           <li>Encontre uma notícia publicada</li>
-          <li>Clique em "☆ Destacar"</li>
+          <li>Clique em "Destacar"</li>
         </ol>
       </div>
     </div>

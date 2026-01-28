@@ -14,12 +14,6 @@ class DatabaseSeeder extends Seeder
     // popula o banco de dados com dados iniciais
     public function run(): void
     {
-        // cria usuario de teste
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
-
         // chama os seeders especificos
         $this->call([
             UserSeeder::class,      // cria usuarios

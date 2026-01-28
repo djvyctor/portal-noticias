@@ -45,7 +45,7 @@
       <!-- Boas-vindas -->
       <div class="mb-8">
         <h2 class="text-2xl font-bold text-gray-900">
-          Olá, {{ user?.name || 'Usuário' }}! 👋
+          Olá, {{ user?.name || 'Usuário' }}!
         </h2>
         <p class="text-gray-600 mt-1">{{ getRoleDescription(user?.role) }}</p>
       </div>
@@ -173,6 +173,30 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
               </svg>
               Gerenciar Usuários
+            </router-link>
+
+            <!-- Solicitar Promoção (só para Jornalista) -->
+            <router-link
+              v-if="user?.role === 'jornalista'"
+              to="/painel/solicitar-promocao"
+              class="flex items-center justify-center px-4 py-3 border border-blue-300 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors font-semibold text-blue-800"
+            >
+              <svg class="mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+              </svg>
+              Quero ser Editor
+            </router-link>
+
+            <!-- Solicitações de Promoção (Editor/Admin) -->
+            <router-link
+              v-if="user?.role === 'editor' || user?.role === 'admin'"
+              to="/painel/solicitacoes-promocao"
+              class="flex items-center justify-center px-4 py-3 border border-indigo-300 rounded-lg bg-indigo-50 hover:bg-indigo-100 transition-colors font-semibold text-indigo-800"
+            >
+              <svg class="mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Solicitações de Promoção
             </router-link>
 
             <!-- Alterar Senha -->

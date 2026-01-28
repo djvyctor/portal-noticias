@@ -127,7 +127,7 @@
         </div>
         
         <p v-if="isJornalista" class="text-sm text-center text-gray-500">
-          💡 Suas notícias serão enviadas para aprovação do editor antes de serem publicadas.
+          Suas notícias serão enviadas para aprovação do editor antes de serem publicadas.
         </p>
       </form>
     </div>

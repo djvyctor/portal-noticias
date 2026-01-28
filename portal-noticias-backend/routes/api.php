@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\NewsController;
+use App\Http\Controllers\PromotionRequestController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -36,6 +37,14 @@ Route::middleware('auth:sanctum')->group(function () {
     
     // gerenciamento de usuarios (admin)
     Route::apiResource('/admin/users', UserController::class);
+    
+    // solicitacoes de promocao (jornalista para editor)
+    Route::get('/promotion-requests/my', [PromotionRequestController::class, 'myRequests']); // jornalista ve suas solicitacoes
+    Route::post('/promotion-requests', [PromotionRequestController::class, 'store']); // jornalista cria solicitacao
+    Route::get('/promotion-requests', [PromotionRequestController::class, 'index']); // editor/admin ve todas
+    Route::get('/promotion-requests/{id}', [PromotionRequestController::class, 'show']); // ver detalhes
+    Route::patch('/promotion-requests/{id}/approve', [PromotionRequestController::class, 'approve']); // editor/admin aprova
+    Route::patch('/promotion-requests/{id}/reject', [PromotionRequestController::class, 'reject']); // editor/admin rejeita
 });
 
 // rotas publicas de visualizacao

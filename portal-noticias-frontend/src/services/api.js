@@ -349,5 +349,53 @@ export const categoryAPI = {
     show: (slug) => api.get(`/categories/${slug}`)
 }
 
+/**
+ * API de Solicitações de Promoção
+ * 
+ * Métodos relacionados às solicitações de promoção de Jornalista para Editor
+ */
+export const promotionRequestAPI = {
+    /**
+     * Lista todas as solicitações (Editor/Admin)
+     * @returns {Promise} Resposta da API com lista de solicitações
+     */
+    index: () => api.get('/promotion-requests'),
+    
+    /**
+     * Lista solicitações do usuário logado (Jornalista)
+     * @returns {Promise} Resposta da API com lista de solicitações do usuário
+     */
+    myRequests: () => api.get('/promotion-requests/my'),
+    
+    /**
+     * Cria uma nova solicitação de promoção
+     * @param {Object} data - Dados da solicitação (message)
+     * @returns {Promise} Resposta da API com a solicitação criada
+     */
+    create: (data) => api.post('/promotion-requests', data),
+    
+    /**
+     * Obtém detalhes de uma solicitação
+     * @param {number} id - ID da solicitação
+     * @returns {Promise} Resposta da API com dados da solicitação
+     */
+    show: (id) => api.get(`/promotion-requests/${id}`),
+    
+    /**
+     * Aprova uma solicitação de promoção
+     * @param {number} id - ID da solicitação
+     * @returns {Promise} Resposta da API
+     */
+    approve: (id) => api.patch(`/promotion-requests/${id}/approve`),
+    
+    /**
+     * Rejeita uma solicitação de promoção
+     * @param {number} id - ID da solicitação
+     * @param {Object} data - Dados da rejeição (rejection_reason)
+     * @returns {Promise} Resposta da API
+     */
+    reject: (id, data) => api.patch(`/promotion-requests/${id}/reject`, data)
+}
+
 // Exporta a instância do axios para uso direto se necessário
 export default api
