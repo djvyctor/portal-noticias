@@ -86,6 +86,23 @@
           ></textarea>
         </div>
 
+        <!-- Campo de destaque (apenas para Editor/Admin) -->
+        <div v-if="canManageFeature" class="bg-white rounded-lg shadow p-6">
+          <label class="flex items-center gap-3 cursor-pointer">
+            <input
+              v-model="form.is_featured"
+              type="checkbox"
+              class="rounded border-gray-300 text-yellow-600 focus:ring-yellow-500"
+            />
+            <span class="text-sm font-medium text-gray-700">
+              Destacar no carrossel da home
+            </span>
+          </label>
+          <p class="text-xs text-gray-500 mt-2">
+            Notícias destacadas aparecem no carrossel da página inicial (máximo 5). Apenas Editor e Admin podem alterar.
+          </p>
+        </div>
+
         <div v-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4">
           <p class="text-sm text-red-600">{{ error }}</p>
         </div>
@@ -128,13 +145,14 @@
  * - Validação de campos obrigatórios
  * - Diferentes comportamentos baseados no papel do usuário:
  *   - Jornalista: Cria como "pending" (aguarda aprovação)
- *   - Editor/Admin: Pode publicar diretamente
+ *   - Editor/Admin: Pode publicar diretamente e definir destaque
  * 
  * Campos do formulário:
  * - Título (obrigatório)
  * - Categoria (obrigatório)
  * - Imagem (opcional)
  * - Conteúdo (obrigatório)
+ * - Destaque (opcional, apenas Editor/Admin)
  */
 
 <script setup>
@@ -155,12 +173,19 @@ const imageFile = ref(null) // Arquivo de imagem selecionado
 const user = JSON.parse(localStorage.getItem('user') || '{}')
 const isJornalista = user.role === 'jornalista'
 
+/**
+ * Verifica se o usuário pode gerenciar destaque
+ * Apenas Editor e Admin têm essa permissão
+ */
+const canManageFeature = user.role === 'editor' || user.role === 'admin'
+
 // Dados do formulário
 const form = reactive({
   title: '',
   content: '',
   category_id: '',
-  status: 'pending' // Status padrão (será alterado baseado no papel do usuário)
+  status: 'pending', // Status padrão (será alterado baseado no papel do usuário)
+  is_featured: false // Destaque (apenas Editor/Admin podem definir)
 })
 
 /**
@@ -243,6 +268,11 @@ const saveNews = async () => {
     formData.append('content', form.content)
     formData.append('category_id', form.category_id)
     formData.append('status', form.status)
+    
+    // Apenas Editor/Admin podem definir destaque
+    if (canManageFeature) {
+      formData.append('is_featured', form.is_featured ? '1' : '0')
+    }
     
     // Adiciona imagem se houver
     if (imageFile.value) {

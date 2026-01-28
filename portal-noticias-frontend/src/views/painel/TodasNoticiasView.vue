@@ -116,9 +116,9 @@
                 ✓ Aprovar
               </button>
               
-              <!-- Destacar no Carrossel (só Admin, só para notícias publicadas) -->
+              <!-- Destacar no Carrossel (Editor/Admin, só para notícias publicadas) -->
               <button
-                v-if="news.status === 'published' && isAdmin"
+                v-if="news.status === 'published' && (isEditor || isAdmin)"
                 @click.stop="toggleFeature(news.id, news.is_featured)"
                 type="button"
                 :class="news.is_featured 
@@ -156,12 +156,12 @@
  * - Lista todas as notícias do sistema (de todos os usuários)
  * - Filtros por status (Todas, Pendentes, Publicadas)
  * - Aprovação de notícias pendentes (Editor/Admin)
- * - Destaque de notícias no carrossel (apenas Admin)
+ * - Destaque de notícias no carrossel (Editor/Admin)
  * - Edição de qualquer notícia
  * 
  * Permissões:
  * - Apenas Editor e Admin podem acessar
- * - Editor pode aprovar e editar notícias
+ * - Editor pode aprovar, editar e destacar notícias
  * - Admin pode aprovar, editar e destacar notícias
  */
 import { ref, computed, onMounted } from 'vue'
@@ -245,7 +245,7 @@ const approveNews = async (id) => {
 }
 
 /**
- * Alterna o destaque de uma notícia no carrossel (apenas Admin)
+ * Alterna o destaque de uma notícia no carrossel (Editor/Admin)
  * 
  * @param {number} id - ID da notícia
  * @param {boolean} currentStatus - Status atual do destaque

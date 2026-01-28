@@ -47,6 +47,12 @@ class NewsController extends Controller
         $status = $this->determineStatus($user, $entry);
         $authorName = format_name($user->name);
 
+        // Determina se a notícia será destacada (apenas Editor/Admin podem definir)
+        $isFeatured = false;
+        if (($user->isEditor() || $user->isAdmin()) && isset($entry['is_featured'])) {
+            $isFeatured = (bool) $entry['is_featured'];
+        }
+
         $news = $user->news()->create([
             'title' => $entry['title'],
             'content' => $entry['content'],
@@ -55,6 +61,7 @@ class NewsController extends Controller
             'category_id' => $entry['category_id'],
             'status' => $status,
             'author_name' => $authorName,
+            'is_featured' => $isFeatured,
         ]);
 
         if ($status === News::STATUS_PUBLISHED) {

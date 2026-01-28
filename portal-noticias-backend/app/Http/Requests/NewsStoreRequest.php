@@ -34,6 +34,7 @@ class NewsStoreRequest extends FormRequest
             'image'       => 'nullable|file|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'category_id' => 'required|exists:categories,id',
             'status'      => 'nullable|in:pending,published,rejected',
+            'is_featured' => 'nullable|boolean', // Permite definir destaque na criação (apenas Editor/Admin)
             'slug'        => 'required|string|unique:news,slug',
         ];
     }
